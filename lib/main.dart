@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'LabelOCR/LabelOCR.dart';
+import 'ReelCounter/ReelCounter.dart';
 
 void main() => runApp(MyApp());
 
@@ -28,10 +29,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   int _selectedIndex = 0;
 
   static List<Widget> _widgetOptions = <Widget>[
-    Text(
-      'Reel Estimator',
-      style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-    ),
+    ReelCounter(),
     LabelOCR(),
     Text(
       'Search',
