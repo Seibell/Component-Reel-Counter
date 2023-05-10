@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:image/image.dart' as img;
 
 class LabelOCR extends StatefulWidget {
   @override
@@ -16,7 +19,21 @@ class _LabelOCRState extends State<LabelOCR> {
     final XFile? pickedFile = await _picker.pickImage(source: source);
 
     if (pickedFile != null) {
-      final inputImage = InputImage.fromFilePath(pickedFile.path);
+      // Load the image file
+      img.Image image =
+          img.decodeImage(File(pickedFile.path).readAsBytesSync())!;
+
+      // Apply preprocessing to increase the contrast
+      image = img.adjustColor(image, contrast: 2.0);
+
+      // Convert the processed image back to a file
+      final List<int> processedImageBytes = img.encodeJpg(image);
+      final processedImageFile = File(pickedFile.path)
+        ..writeAsBytesSync(processedImageBytes);
+
+      // Create an InputImage instance from the processed image file
+      final inputImage = InputImage.fromFilePath(processedImageFile.path);
+
       final textRecognizer = GoogleMlKit.vision.textRecognizer();
       final RecognizedText recognizedText =
           await textRecognizer.processImage(inputImage);
