@@ -92,7 +92,7 @@ class _ReelCounterState extends State<ReelCounter> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Reel Estimator'),
+        title: const Text('Reel Estimator'),
       ),
       body: Center(
         child: Padding(
@@ -103,10 +103,11 @@ class _ReelCounterState extends State<ReelCounter> {
               TextField(
                 controller: widthOfRollController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Width of Roll (mm)'),
+                decoration:
+                    const InputDecoration(labelText: 'Width of Roll (mm)'),
               ),
               DropdownButton<String>(
-                hint: Text('Select Reel Type'),
+                hint: const Text('Select Reel Type'),
                 value: selectedType,
                 onChanged: (String? newValue) {
                   setState(() {
@@ -123,12 +124,12 @@ class _ReelCounterState extends State<ReelCounter> {
               ),
               ElevatedButton(
                 onPressed: _calculateReelEstimate,
-                child: Text('Calculate Reel Estimate'),
+                child: const Text('Calculate Reel Estimate'),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text(
                 _result,
-                style: TextStyle(fontSize: 18),
+                style: const TextStyle(fontSize: 18),
               ),
             ],
           ),

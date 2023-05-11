@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'LabelOCR/LabelOCR.dart';
 import 'ReelCounter/ReelCounter.dart';
+import 'SearchData/SearchScreenState.dart';
 
 void main() => runApp(MyApp());
 
@@ -31,10 +32,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   static List<Widget> _widgetOptions = <Widget>[
     ReelCounter(),
     LabelOCR(),
-    Text(
-      'Search',
-      style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-    ),
+    SearchScreen(),
   ];
 
   void _onItemTapped(int index) {

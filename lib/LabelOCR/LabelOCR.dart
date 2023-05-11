@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:image/image.dart' as img;
+import 'database_helper.dart';
 
 class LabelOCR extends StatefulWidget {
   @override
@@ -13,6 +13,18 @@ class LabelOCR extends StatefulWidget {
 class _LabelOCRState extends State<LabelOCR> {
   final ValueNotifier<String> _extractedTextNotifier =
       ValueNotifier<String>('');
+
+  Future<void> saveExtractedText(String text) async {
+    String timestamp = DateTime.now().toString();
+    Map<String, dynamic> row = {
+      DatabaseHelper.columnTimestamp: timestamp,
+      DatabaseHelper.columnText: text,
+    };
+    int id = await DatabaseHelper.instance.insert(row);
+
+    //To be removed (for testing purposes only)
+    print("Inserted row with ID: $id");
+  }
 
   Future<void> _readTextFromImage(ImageSource source) async {
     final ImagePicker _picker = ImagePicker();
@@ -39,6 +51,7 @@ class _LabelOCRState extends State<LabelOCR> {
           await textRecognizer.processImage(inputImage);
 
       _extractedTextNotifier.value = recognizedText.text;
+      await saveExtractedText(recognizedText.text);
 
       textRecognizer.close();
     }
@@ -49,24 +62,24 @@ class _LabelOCRState extends State<LabelOCR> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Text(
+        const Text(
           'Label OCR',
           style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
         ),
         ElevatedButton(
           onPressed: () => _readTextFromImage(ImageSource.camera),
-          child: Text('Capture Image and Read Text'),
+          child: const Text('Capture Image and Read Text'),
         ),
         ElevatedButton(
           onPressed: () => _readTextFromImage(ImageSource.gallery),
-          child: Text('Upload Image and Read Text'),
+          child: const Text('Upload Image and Read Text'),
         ),
-        SizedBox(height: 20),
-        Text(
+        const SizedBox(height: 20),
+        const Text(
           'Extracted Text:',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         ValueListenableBuilder<String>(
           valueListenable: _extractedTextNotifier,
           builder: (context, value, child) {
@@ -74,7 +87,7 @@ class _LabelOCRState extends State<LabelOCR> {
               child: SingleChildScrollView(
                 child: Text(
                   value,
-                  style: TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16),
                 ),
               ),
             );
