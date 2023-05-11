@@ -20,9 +20,19 @@ class _ReelCounterState extends State<ReelCounter> {
   String _result = '';
 
   //Add dropdown items list to select reel type
-  List<String> _reelType = ['0402', '0603'];
+  List<String> _reelType = [
+    '0402',
+    '0603',
+    '0805',
+    '1206',
+    '1210',
+    '1812',
+    '2010',
+    '2512'
+  ];
   String? selectedType;
 
+  //Typical reel sizes and esimates on dimensions
   void updateValuesForSelectedReelType(String? type) {
     setState(() {
       if (type == '0402') {
@@ -33,6 +43,30 @@ class _ReelCounterState extends State<ReelCounter> {
         internalHubDiameter = 60.0;
         tapeThickness = 0.5;
         distanceBetweenComponents = 4.0;
+      } else if (type == '0805') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 4.0;
+      } else if (type == '1206') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 4.0;
+      } else if (type == '1210') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 4.0;
+      } else if (type == '1812') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.6;
+        distanceBetweenComponents = 8.0;
+      } else if (type == '2010') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.6;
+        distanceBetweenComponents = 8.0;
+      } else if (type == '2512') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.6;
+        distanceBetweenComponents = 8.0;
       }
     });
   }
