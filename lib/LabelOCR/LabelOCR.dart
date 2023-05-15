@@ -13,7 +13,7 @@ class LabelOCR extends StatefulWidget {
 class _LabelOCRState extends State<LabelOCR> {
   final ValueNotifier<String> _extractedTextNotifier =
       ValueNotifier<String>('');
-  bool _isLoading = false; // Added variable to track loading state
+  bool _isLoading = false;
 
   Future<void> saveExtractedText(String text) async {
     String timestamp = DateTime.now().toString();
@@ -23,14 +23,13 @@ class _LabelOCRState extends State<LabelOCR> {
     };
     int id = await DatabaseHelper.instance.insert(row);
 
-    // To be removed (for testing purposes only)
+    //To be removed (for testing purposes only)
     print("Inserted row with ID: $id");
   }
 
   Future<File> applyPreprocessing(String imagePath) async {
     img.Image image = img.decodeImage(File(imagePath).readAsBytesSync())!;
 
-    // To be removed soon (for testing only)
     print("original width = ${image.width}");
     print("original height = ${image.height}");
 
@@ -40,7 +39,7 @@ class _LabelOCRState extends State<LabelOCR> {
     // Resize the image - optimal text height for OCR is 20-32 pixels
     image = img.copyResize(image, height: newHeight, width: newWidth);
     // Apply Gaussian blur to the image
-    // image = img.gaussianBlur(image, radius: 10);
+    //image = img.gaussianBlur(image, radius: 10);
 
     // Apply preprocessing to increase the contrast
     image = img.adjustColor(image, contrast: 2.69);
@@ -58,7 +57,7 @@ class _LabelOCRState extends State<LabelOCR> {
 
   Future<void> _readTextFromImage(ImageSource source) async {
     setState(() {
-      _isLoading = true; // Show loading spinner
+      _isLoading = true; // Set loading state
     });
 
     final ImagePicker _picker = ImagePicker();
@@ -81,7 +80,7 @@ class _LabelOCRState extends State<LabelOCR> {
     }
 
     setState(() {
-      _isLoading = false; // Hide loading spinner
+      _isLoading = false; // Set loading state
     });
   }
 
@@ -112,7 +111,8 @@ class _LabelOCRState extends State<LabelOCR> {
           valueListenable: _extractedTextNotifier,
           builder: (context, value, child) {
             if (_isLoading) {
-              return CircularProgressIndicator(); // Show loading spinner
+              // If the image is being processed, display a loading message
+              return const Text("Processing Image...");
             } else {
               return Expanded(
                 child: SingleChildScrollView(

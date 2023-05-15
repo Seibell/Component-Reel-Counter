@@ -2,8 +2,18 @@ import 'package:flutter/material.dart';
 import 'LabelOCR/LabelOCR.dart';
 import 'ReelCounter/ReelCounter.dart';
 import 'SearchData/SearchScreenState.dart';
+import 'package:flutter/services.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((_) {
+    runApp(MyApp());
+  });
+}
 
 class MyApp extends StatelessWidget {
   MyApp({Key? key}) : super(key: key);
