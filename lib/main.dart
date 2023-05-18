@@ -67,12 +67,12 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
             label: 'Reel Estimator',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.image),
+            icon: Icon(Icons.add_a_photo),
             label: 'Label OCR',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.storage),
+            label: 'Database',
           ),
         ],
         currentIndex: _selectedIndex,
