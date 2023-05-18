@@ -145,6 +145,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 );
               }).toList();
               return DataTable(
+                columnSpacing: 15,
                 columns: [
                   DataColumn(label: Text('Select')),
                   DataColumn(label: Text('Timestamp')),

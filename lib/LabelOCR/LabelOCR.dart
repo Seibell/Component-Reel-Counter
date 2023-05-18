@@ -19,7 +19,7 @@ class _LabelOCRState extends State<LabelOCR> {
     String timestamp = DateTime.now().toString();
     Map<String, dynamic> row = {
       DatabaseHelper.columnTimestamp: timestamp,
-      DatabaseHelper.columnText: text.split,
+      DatabaseHelper.columnText: text,
     };
     int id = await DatabaseHelper.instance.insert(row);
 
