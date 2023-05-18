@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:image/image.dart' as img;
 import 'database_helper.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 class LabelOCR extends StatefulWidget {
   @override
@@ -14,6 +15,43 @@ class _LabelOCRState extends State<LabelOCR> {
   final ValueNotifier<String> _extractedTextNotifier =
       ValueNotifier<String>('');
   bool _isLoading = false;
+
+  Future<File?> _cropImage(File originalImageFile) async {
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: originalImageFile.path,
+      aspectRatioPresets: Platform.isAndroid
+          ? [
+              CropAspectRatioPreset.square,
+              CropAspectRatioPreset.ratio3x2,
+              CropAspectRatioPreset.original,
+              CropAspectRatioPreset.ratio4x3,
+              CropAspectRatioPreset.ratio16x9
+            ]
+          : [
+              CropAspectRatioPreset.original,
+              CropAspectRatioPreset.square,
+              CropAspectRatioPreset.ratio3x2,
+              CropAspectRatioPreset.ratio4x3,
+              CropAspectRatioPreset.ratio5x3,
+              CropAspectRatioPreset.ratio5x4,
+              CropAspectRatioPreset.ratio7x5,
+              CropAspectRatioPreset.ratio16x9
+            ],
+      uiSettings: [
+        AndroidUiSettings(
+            toolbarTitle: 'Crop Image',
+            toolbarColor: Colors.blue,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false),
+        IOSUiSettings(
+          title: 'Crop Image',
+        ),
+      ],
+    );
+
+    return croppedFile != null ? File(croppedFile.path) : null;
+  }
 
   Future<void> saveExtractedText(String text) async {
     String timestamp = DateTime.now().toString();
@@ -64,19 +102,25 @@ class _LabelOCRState extends State<LabelOCR> {
     final XFile? pickedFile = await _picker.pickImage(source: source);
 
     if (pickedFile != null) {
-      final processedImageFile = await applyPreprocessing(pickedFile.path);
+      File originalImageFile = File(pickedFile.path);
+      File? croppedImageFile = await _cropImage(originalImageFile);
 
-      // Create an InputImage instance from the processed image file
-      final inputImage = InputImage.fromFilePath(processedImageFile.path);
+      if (croppedImageFile != null) {
+        final processedImageFile =
+            await applyPreprocessing(croppedImageFile.path);
 
-      final textRecognizer = GoogleMlKit.vision.textRecognizer();
-      final RecognizedText recognizedText =
-          await textRecognizer.processImage(inputImage);
+        // Create an InputImage instance from the processed image file
+        final inputImage = InputImage.fromFilePath(processedImageFile.path);
 
-      _extractedTextNotifier.value = recognizedText.text;
-      await saveExtractedText(recognizedText.text);
+        final textRecognizer = GoogleMlKit.vision.textRecognizer();
+        final RecognizedText recognizedText =
+            await textRecognizer.processImage(inputImage);
 
-      textRecognizer.close();
+        _extractedTextNotifier.value = recognizedText.text;
+        await saveExtractedText(recognizedText.text);
+
+        textRecognizer.close();
+      }
     }
 
     setState(() {
