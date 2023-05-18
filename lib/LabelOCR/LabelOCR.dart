@@ -15,6 +15,7 @@ class _LabelOCRState extends State<LabelOCR> {
   final ValueNotifier<String> _extractedTextNotifier =
       ValueNotifier<String>('');
   bool _isLoading = false;
+  final ValueNotifier<File?> _croppedImageNotifier = ValueNotifier<File?>(null);
 
   Future<File?> _cropImage(File originalImageFile) async {
     final croppedFile = await ImageCropper().cropImage(
@@ -104,6 +105,7 @@ class _LabelOCRState extends State<LabelOCR> {
     if (pickedFile != null) {
       File originalImageFile = File(pickedFile.path);
       File? croppedImageFile = await _cropImage(originalImageFile);
+      _croppedImageNotifier.value = croppedImageFile;
 
       if (croppedImageFile != null) {
         final processedImageFile =
@@ -133,19 +135,60 @@ class _LabelOCRState extends State<LabelOCR> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
+        const SizedBox(height: 10),
         const Text(
           'Label OCR',
           style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
         ),
-        ElevatedButton(
-          onPressed: () => _readTextFromImage(ImageSource.camera),
-          child: const Text('Capture Image and Read Text'),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment
+              .spaceEvenly, // To space the buttons evenly in the row
+          children: <Widget>[
+            Container(
+              height: 50.0, // Set the height of the container
+              width: 150.0, // Set the width of the container
+              child: ElevatedButton(
+                onPressed: () => _readTextFromImage(ImageSource.camera),
+                child: const Text('Capture Image'),
+              ),
+            ),
+            Container(
+              height: 50.0, // Set the height of the container
+              width: 150.0, // Set the width of the container
+              child: ElevatedButton(
+                onPressed: () => _readTextFromImage(ImageSource.gallery),
+                child: const Text('Upload Image'),
+              ),
+            ),
+          ],
         ),
-        ElevatedButton(
-          onPressed: () => _readTextFromImage(ImageSource.gallery),
-          child: const Text('Upload Image and Read Text'),
+        const SizedBox(height: 10),
+        const Text(
+          'Cropped Image:',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(8.0),
+          width: 400, // fixed width
+          height: 150, // fixed height
+          child: ValueListenableBuilder<File?>(
+            valueListenable: _croppedImageNotifier,
+            builder: (context, file, child) {
+              if (file != null) {
+                return Image.file(
+                  file,
+                  fit: BoxFit
+                      .contain, // Makes the image look better when resized
+                );
+              } else {
+                return const Center(
+                    child: Text(
+                        'No image selected')); // This is to center the text in the container
+              }
+            },
+          ),
+        ),
         const Text(
           'Extracted Text:',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
