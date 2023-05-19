@@ -15,7 +15,9 @@ class _LabelOCRState extends State<LabelOCR> {
   final ValueNotifier<String> _extractedTextNotifier =
       ValueNotifier<String>('');
   bool _isLoading = false;
+  bool _isSaved = false;
   final ValueNotifier<File?> _croppedImageNotifier = ValueNotifier<File?>(null);
+  final TextEditingController _textEditingController = TextEditingController();
 
   Future<File?> _cropImage(File originalImageFile) async {
     final croppedFile = await ImageCropper().cropImage(
@@ -119,7 +121,7 @@ class _LabelOCRState extends State<LabelOCR> {
             await textRecognizer.processImage(inputImage);
 
         _extractedTextNotifier.value = recognizedText.text;
-        await saveExtractedText(recognizedText.text);
+        _textEditingController.text = recognizedText.text;
 
         textRecognizer.close();
       }
@@ -131,92 +133,153 @@ class _LabelOCRState extends State<LabelOCR> {
   }
 
   @override
+  void dispose() {
+    _extractedTextNotifier.dispose();
+    _croppedImageNotifier.dispose();
+    _textEditingController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Label OCR'),
+    return MaterialApp(
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        buttonTheme: const ButtonThemeData(
+          buttonColor: Colors.blue, //  <-- dark color
+          textTheme: ButtonTextTheme.primary,
+        ),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const SizedBox(height: 10),
-          const Text(
-            'Label OCR',
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment
-                .spaceEvenly, // To space the buttons evenly in the row
-            children: <Widget>[
-              Container(
-                height: 50.0, // Set the height of the container
-                width: 150.0, // Set the width of the container
-                child: ElevatedButton(
-                  onPressed: () => _readTextFromImage(ImageSource.camera),
-                  child: const Text('Capture Image'),
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Label OCR'),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    ElevatedButton(
+                      onPressed: () => _readTextFromImage(ImageSource.camera),
+                      child: const Padding(
+                        padding: EdgeInsets.all(15.0),
+                        child: const Text('Capture Image'),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32.0),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => _readTextFromImage(ImageSource.gallery),
+                      child: const Padding(
+                        padding: EdgeInsets.all(15.0),
+                        child: const Text('Upload Image'),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32.0),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              Container(
-                height: 50.0, // Set the height of the container
-                width: 150.0, // Set the width of the container
-                child: ElevatedButton(
-                  onPressed: () => _readTextFromImage(ImageSource.gallery),
-                  child: const Text('Upload Image'),
+                const Text(
+                  'Extracted Text:',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Cropped Image:',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            width: 400, // fixed width
-            height: 150, // fixed height
-            child: ValueListenableBuilder<File?>(
-              valueListenable: _croppedImageNotifier,
-              builder: (context, file, child) {
-                if (file != null) {
-                  return Image.file(
-                    file,
-                    fit: BoxFit
-                        .contain, // Makes the image look better when resized
-                  );
-                } else {
-                  return const Center(
-                      child: Text(
-                          'No image selected')); // This is to center the text in the container
-                }
-              },
-            ),
-          ),
-          const Text(
-            'Extracted Text:',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          ValueListenableBuilder<String>(
-            valueListenable: _extractedTextNotifier,
-            builder: (context, value, child) {
-              if (_isLoading) {
-                // If the image is being processed, display a loading message
-                return const Text("Processing Image...");
-              } else {
-                return Expanded(
-                  child: SingleChildScrollView(
-                    child: Text(
-                      value,
-                      style: const TextStyle(fontSize: 16),
+                Card(
+                  elevation: 5,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: 400,
+                      height: 150,
+                      child: ValueListenableBuilder<String>(
+                        valueListenable: _extractedTextNotifier,
+                        builder: (context, value, child) {
+                          if (value.isNotEmpty &&
+                              _textEditingController.text.isEmpty) {
+                            _textEditingController.text = value;
+                            _isSaved = false;
+                          }
+                          return _textEditingController.text.isEmpty
+                              ? _isLoading
+                                  ? const Center(
+                                      child: Text("Extracting text..."))
+                                  : const Center(
+                                      child: Text("No text extracted"))
+                              : SingleChildScrollView(
+                                  child: TextField(
+                                    controller: _textEditingController,
+                                    maxLines: null,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                );
+                        },
+                      ),
                     ),
                   ),
-                );
-              }
-            },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    const Text(
+                      'Cropped Image:',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    ElevatedButton(
+                      onPressed: _isSaved
+                          ? null
+                          : () {
+                              saveExtractedText(_textEditingController.text);
+                              setState(() {
+                                _isSaved = true;
+                              });
+                            },
+                      child: const Text('Save Text'),
+                    ),
+                  ],
+                ),
+                Card(
+                  elevation: 5,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: 400,
+                      height: 150,
+                      child: ValueListenableBuilder<File?>(
+                        valueListenable: _croppedImageNotifier,
+                        builder: (context, file, child) {
+                          if (file != null) {
+                            return Image.file(
+                              file,
+                              fit: BoxFit.cover,
+                            );
+                          } else {
+                            return const Center(
+                                child: Text('No image selected'));
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

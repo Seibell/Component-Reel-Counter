@@ -24,6 +24,10 @@ class _SearchScreenState extends State<SearchScreen> {
   int page = 0;
   int rowsPerPage = 9;
 
+  // Variables for search function
+  bool _showSearchBar = false;
+  TextEditingController _searchController = TextEditingController();
+
   // Function to format timestamp
   String formattedTimestamp(String timestamp) {
     DateTime parsedTimestamp = DateTime.parse(timestamp);
@@ -39,8 +43,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Function to fetch data from the database
   void _fetchData() {
-    _data = DatabaseHelper.instance
-        .queryAllRows(page: page, rowsPerPage: rowsPerPage);
+    String searchQuery = _searchController.text;
+
+    _data = DatabaseHelper.instance.queryAllRows(
+      page: page,
+      rowsPerPage: rowsPerPage,
+      searchQuery: searchQuery,
+    );
   }
 
   // Function to fetch the next page of data
@@ -78,6 +87,17 @@ class _SearchScreenState extends State<SearchScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Selected items copied to clipboard")),
     );
+  }
+
+  // Function to delete selected items from the database
+  void _deleteSelectedItems() async {
+    List<int> selectedIds = _selectedItems.keys.toList();
+    await DatabaseHelper.instance.deleteMultiple(selectedIds);
+
+    setState(() {
+      _fetchData();
+      _selectedItems.clear();
+    });
   }
 
   // Function to share selected items via http request
@@ -120,6 +140,19 @@ class _SearchScreenState extends State<SearchScreen> {
         title: const Text('Search OCR Text'),
         actions: <Widget>[
           IconButton(
+            onPressed: () {
+              // Toggle the search bar visibility
+              setState(() {
+                _showSearchBar = !_showSearchBar;
+              });
+            },
+            icon: const Icon(Icons.search),
+          ),
+          IconButton(
+            onPressed: _deleteSelectedItems,
+            icon: const Icon(Icons.delete),
+          ),
+          IconButton(
             onPressed: _copySelectedItems,
             icon: const Icon(Icons.copy),
           ),
@@ -131,6 +164,23 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: Column(
         children: [
+          if (_showSearchBar)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                onChanged: (value) {
+                  _searchController.text = value;
+                  // Perform search based on the entered value
+                  setState(() {
+                    _fetchData();
+                  });
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Search',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _data,
@@ -144,8 +194,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   } else {
                     List<Map<String, dynamic>> sortedData =
                         List.from(snapshot.data!);
-                    sortedData.sort((a, b) => b[DatabaseHelper.columnId]
-                        .compareTo(a[DatabaseHelper.columnId]));
 
                     List<DataRow> dataRows = sortedData.map((row) {
                       final itemId = row[DatabaseHelper.columnId];

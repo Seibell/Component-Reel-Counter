@@ -40,12 +40,26 @@ class DatabaseHelper {
     return await db.insert(_tableName, row);
   }
 
+  // Delete multiple rows from the database based on column IDs
+  Future<void> deleteMultiple(List<int> columnIds) async {
+    final db = await database;
+    await db.delete(
+      _tableName,
+      where: '$columnId IN (${columnIds.map((id) => '?').join(', ')})',
+      whereArgs: columnIds,
+    );
+  }
+
   Future<List<Map<String, dynamic>>> queryAllRows(
-      {int page = 0, int rowsPerPage = 9}) async {
+      {int page = 0, int rowsPerPage = 9, String searchQuery = ''}) async {
     Database db = await instance.database;
     int offset = page * rowsPerPage;
-    List<Map<String, dynamic>> rows =
-        await db.query(_tableName, limit: rowsPerPage, offset: offset);
+    List<Map<String, dynamic>> rows = await db.query(_tableName,
+        limit: rowsPerPage,
+        offset: offset,
+        orderBy: '$columnTimestamp DESC',
+        where: '$columnText LIKE ?',
+        whereArgs: ['%$searchQuery%']);
 
     //To be removed (for testing purposes only)
     print('Fetched rows: $rows');
