@@ -1,5 +1,6 @@
 // import necessary dependencies
 import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import '../LabelOCR/database_helper.dart'; // our local database helper class
 import 'package:intl/intl.dart'; // for date and time formatting
 import 'package:flutter/services.dart'; // for clipboard service
@@ -19,6 +20,10 @@ class _SearchScreenState extends State<SearchScreen> {
   Map<int, String> _selectedItems =
       {}; // Map to store the selected items from the list
 
+  // Variables for pagination
+  int page = 0;
+  int rowsPerPage = 9;
+
   // Function to format timestamp
   String formattedTimestamp(String timestamp) {
     DateTime parsedTimestamp = DateTime.parse(timestamp);
@@ -34,7 +39,31 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Function to fetch data from the database
   void _fetchData() {
-    _data = DatabaseHelper.instance.queryAllRows();
+    _data = DatabaseHelper.instance
+        .queryAllRows(page: page, rowsPerPage: rowsPerPage);
+  }
+
+  // Function to fetch the next page of data
+  void _fetchNextPage() async {
+    List<Map<String, dynamic>> nextPageData = await DatabaseHelper.instance
+        .queryAllRows(page: page + 1, rowsPerPage: rowsPerPage);
+
+    if (nextPageData.isNotEmpty) {
+      setState(() {
+        page++;
+        _fetchData();
+      });
+    }
+  }
+
+  // Function to fetch the previous page of data
+  void _fetchPreviousPage() {
+    if (page > 0) {
+      setState(() {
+        page--; // decrement the page number
+        _fetchData(); // fetch the data for the previous page
+      });
+    }
   }
 
   // Function to copy selected items to the clipboard
@@ -91,109 +120,110 @@ class _SearchScreenState extends State<SearchScreen> {
         title: const Text('Search OCR Text'),
         actions: <Widget>[
           IconButton(
-            onPressed:
-                _copySelectedItems, // set the on pressed to the copy function
-            icon: const Icon(Icons.copy), // icon for the button
+            onPressed: _copySelectedItems,
+            icon: const Icon(Icons.copy),
           ),
           IconButton(
-            onPressed:
-                _shareSelectedItems, // set the on pressed to the share function
-            icon: const Icon(Icons.share), // icon for the button
+            onPressed: _shareSelectedItems,
+            icon: const Icon(Icons.share),
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _data, // the future object for the FutureBuilder
-        builder: (BuildContext context,
-            AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            // Show a circular progress indicator while waiting for the future to complete
-            return const Center(child: CircularProgressIndicator());
-          } else {
-            if (snapshot.hasError) {
-              // Show an error if the future completed with an error
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else {
-              // If the future completed with a result
-              List<Map<String, dynamic>> sortedData = List.from(snapshot.data!);
-              // Sort the data based on id
-              sortedData.sort((a, b) => b[DatabaseHelper.columnId]
-                  .compareTo(a[DatabaseHelper.columnId]));
+      body: Column(
+        children: [
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _data,
+              builder: (BuildContext context,
+                  AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else {
+                    List<Map<String, dynamic>> sortedData =
+                        List.from(snapshot.data!);
+                    sortedData.sort((a, b) => b[DatabaseHelper.columnId]
+                        .compareTo(a[DatabaseHelper.columnId]));
 
-              // Create data rows from the sorted data
-              List<DataRow> dataRows = sortedData.map((row) {
-                final itemId = row[
-                    DatabaseHelper.columnId]; // get the id of the current row
-                final itemText = row[DatabaseHelper
-                    .columnText]; // get the text of the current row
+                    List<DataRow> dataRows = sortedData.map((row) {
+                      final itemId = row[DatabaseHelper.columnId];
+                      final itemText = row[DatabaseHelper.columnText];
 
-                // Return a DataRow for the current row
-                return DataRow(
-                  cells: [
-                    // CheckBox cell to select the item
-                    DataCell(Checkbox(
-                      value: _selectedItems.containsKey(
-                          itemId), // check if this item is selected
-                      onChanged: (value) {
-                        setState(() {
-                          // call setState to update the UI
-                          if (value!) {
-                            _selectedItems[itemId] =
-                                itemText; // add the item to the selected items
-                          } else {
-                            _selectedItems.remove(
-                                itemId); // remove the item from the selected items
-                          }
-                        });
-                      },
-                    )),
-                    // Display the timestamp of the item in a cell
-                    DataCell(Text(formattedTimestamp(
-                        row[DatabaseHelper.columnTimestamp]))),
-                    // Display the item text in a cell
-                    DataCell(
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: 100),
-                        child: InkWell(
-                          onTap: () {
-                            // Copy the text to the clipboard when tapped
-                            Clipboard.setData(
-                              ClipboardData(text: itemText),
-                            );
-                            // Show a snack bar indicating the text has been copied
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text("Text copied to clipboard")),
-                            );
-                          },
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.vertical,
-                            child: Text(
-                              itemText,
-                              softWrap: true,
+                      return DataRow(
+                        cells: [
+                          DataCell(Checkbox(
+                            value: _selectedItems.containsKey(itemId),
+                            onChanged: (value) {
+                              setState(() {
+                                if (value!) {
+                                  _selectedItems[itemId] = itemText;
+                                } else {
+                                  _selectedItems.remove(itemId);
+                                }
+                              });
+                            },
+                          )),
+                          DataCell(Text(formattedTimestamp(
+                              row[DatabaseHelper.columnTimestamp]))),
+                          DataCell(
+                            ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: 100),
+                              child: InkWell(
+                                onTap: () {
+                                  Clipboard.setData(
+                                    ClipboardData(text: itemText),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content:
+                                            Text("Text copied to clipboard")),
+                                  );
+                                },
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.vertical,
+                                  child: Text(
+                                    itemText,
+                                    softWrap: true,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }).toList();
-              // Return a DataTable with the data rows
-              return DataTable(
-                columnSpacing: 15, // space between columns
-                columns: [
-                  DataColumn(
-                      label: Text('Select')), // column for selecting items
-                  DataColumn(label: Text('Timestamp')), // column for timestamps
-                  DataColumn(
-                      label: Text('Text')), // column for the text of items
-                ],
-                rows: dataRows, // the rows of the table
-              );
-            }
-          }
-        },
+                        ],
+                      );
+                    }).toList();
+
+                    return DataTable(
+                      columnSpacing: 15,
+                      columns: [
+                        DataColumn(label: Text('Select')),
+                        DataColumn(label: Text('Timestamp')),
+                        DataColumn(label: Text('Text')),
+                      ],
+                      rows: dataRows,
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                onPressed: _fetchPreviousPage,
+                icon: Icon(Icons.arrow_back),
+              ),
+              Text('Page ${page + 1}'),
+              IconButton(
+                onPressed: _fetchNextPage,
+                icon: Icon(Icons.arrow_forward),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

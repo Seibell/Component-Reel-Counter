@@ -132,87 +132,92 @@ class _LabelOCRState extends State<LabelOCR> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        const SizedBox(height: 10),
-        const Text(
-          'Label OCR',
-          style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment
-              .spaceEvenly, // To space the buttons evenly in the row
-          children: <Widget>[
-            Container(
-              height: 50.0, // Set the height of the container
-              width: 150.0, // Set the width of the container
-              child: ElevatedButton(
-                onPressed: () => _readTextFromImage(ImageSource.camera),
-                child: const Text('Capture Image'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Label OCR'),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          const SizedBox(height: 10),
+          const Text(
+            'Label OCR',
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment
+                .spaceEvenly, // To space the buttons evenly in the row
+            children: <Widget>[
+              Container(
+                height: 50.0, // Set the height of the container
+                width: 150.0, // Set the width of the container
+                child: ElevatedButton(
+                  onPressed: () => _readTextFromImage(ImageSource.camera),
+                  child: const Text('Capture Image'),
+                ),
               ),
-            ),
-            Container(
-              height: 50.0, // Set the height of the container
-              width: 150.0, // Set the width of the container
-              child: ElevatedButton(
-                onPressed: () => _readTextFromImage(ImageSource.gallery),
-                child: const Text('Upload Image'),
+              Container(
+                height: 50.0, // Set the height of the container
+                width: 150.0, // Set the width of the container
+                child: ElevatedButton(
+                  onPressed: () => _readTextFromImage(ImageSource.gallery),
+                  child: const Text('Upload Image'),
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Cropped Image:',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            width: 400, // fixed width
+            height: 150, // fixed height
+            child: ValueListenableBuilder<File?>(
+              valueListenable: _croppedImageNotifier,
+              builder: (context, file, child) {
+                if (file != null) {
+                  return Image.file(
+                    file,
+                    fit: BoxFit
+                        .contain, // Makes the image look better when resized
+                  );
+                } else {
+                  return const Center(
+                      child: Text(
+                          'No image selected')); // This is to center the text in the container
+                }
+              },
             ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        const Text(
-          'Cropped Image:',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        Container(
-          padding: const EdgeInsets.all(8.0),
-          width: 400, // fixed width
-          height: 150, // fixed height
-          child: ValueListenableBuilder<File?>(
-            valueListenable: _croppedImageNotifier,
-            builder: (context, file, child) {
-              if (file != null) {
-                return Image.file(
-                  file,
-                  fit: BoxFit
-                      .contain, // Makes the image look better when resized
-                );
+          ),
+          const Text(
+            'Extracted Text:',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          ValueListenableBuilder<String>(
+            valueListenable: _extractedTextNotifier,
+            builder: (context, value, child) {
+              if (_isLoading) {
+                // If the image is being processed, display a loading message
+                return const Text("Processing Image...");
               } else {
-                return const Center(
+                return Expanded(
+                  child: SingleChildScrollView(
                     child: Text(
-                        'No image selected')); // This is to center the text in the container
+                      value,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                );
               }
             },
           ),
-        ),
-        const Text(
-          'Extracted Text:',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        ValueListenableBuilder<String>(
-          valueListenable: _extractedTextNotifier,
-          builder: (context, value, child) {
-            if (_isLoading) {
-              // If the image is being processed, display a loading message
-              return const Text("Processing Image...");
-            } else {
-              return Expanded(
-                child: SingleChildScrollView(
-                  child: Text(
-                    value,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ),
-              );
-            }
-          },
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

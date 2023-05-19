@@ -40,9 +40,12 @@ class DatabaseHelper {
     return await db.insert(_tableName, row);
   }
 
-  Future<List<Map<String, dynamic>>> queryAllRows() async {
+  Future<List<Map<String, dynamic>>> queryAllRows(
+      {int page = 0, int rowsPerPage = 9}) async {
     Database db = await instance.database;
-    List<Map<String, dynamic>> rows = await db.query(_tableName);
+    int offset = page * rowsPerPage;
+    List<Map<String, dynamic>> rows =
+        await db.query(_tableName, limit: rowsPerPage, offset: offset);
 
     //To be removed (for testing purposes only)
     print('Fetched rows: $rows');
