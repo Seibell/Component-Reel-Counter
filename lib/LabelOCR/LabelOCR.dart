@@ -5,10 +5,42 @@ import 'dart:io';
 import 'package:image/image.dart' as img;
 import 'database_helper.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'dart:isolate';
 
 class LabelOCR extends StatefulWidget {
   @override
   _LabelOCRState createState() => _LabelOCRState();
+}
+
+// Preprocessing function that will run in another isolate
+void applyPreprocessingIsolate(Map<String, dynamic> message) async {
+  final String imagePath = message['data'];
+  final SendPort sendPort = message['port'];
+
+  img.Image image = img.decodeImage(File(imagePath).readAsBytesSync())!;
+
+  print("original width = ${image.width}");
+  print("original height = ${image.height}");
+
+  int newWidth = (image.width * 1.23).round();
+  int newHeight = (image.height * 1.5).round();
+
+  // Resize the image - optimal text height for OCR is 20-32 pixels
+  image = img.copyResize(image, height: newHeight, width: newWidth);
+
+  // Apply preprocessing to increase the contrast
+  image = img.adjustColor(image, contrast: 2.69);
+
+  // Convert the image to grayscale
+  image = img.grayscale(image);
+
+  // Convert the processed image back to a file
+  final List<int> processedImageBytes = img.encodeJpg(image);
+  final processedImageFile = File(imagePath)
+    ..writeAsBytesSync(processedImageBytes);
+
+  // Send processed image file path back to main isolate
+  sendPort.send(processedImageFile.path);
 }
 
 class _LabelOCRState extends State<LabelOCR> {
@@ -68,32 +100,22 @@ class _LabelOCRState extends State<LabelOCR> {
     print("Inserted row with ID: $id");
   }
 
+// Function to start the isolate and get the result
   Future<File> applyPreprocessing(String imagePath) async {
-    img.Image image = img.decodeImage(File(imagePath).readAsBytesSync())!;
+    // Create a port to receive the message from the isolate
+    final receivePort = ReceivePort();
 
-    print("original width = ${image.width}");
-    print("original height = ${image.height}");
+    // Start the isolate
+    await Isolate.spawn(
+      applyPreprocessingIsolate,
+      {'data': imagePath, 'port': receivePort.sendPort},
+    );
 
-    int newWidth = (image.width * 1.23).round();
-    int newHeight = (image.height * 1.5).round();
+    // Wait for the processed image file path
+    final processedImageFilePath = await receivePort.first as String;
 
-    // Resize the image - optimal text height for OCR is 20-32 pixels
-    image = img.copyResize(image, height: newHeight, width: newWidth);
-    // Apply Gaussian blur to the image
-    //image = img.gaussianBlur(image, radius: 10);
-
-    // Apply preprocessing to increase the contrast
-    image = img.adjustColor(image, contrast: 2.69);
-
-    // Convert the image to grayscale (optional)
-    image = img.grayscale(image);
-
-    // Convert the processed image back to a file
-    final List<int> processedImageBytes = img.encodeJpg(image);
-    final processedImageFile = File(imagePath)
-      ..writeAsBytesSync(processedImageBytes);
-
-    return processedImageFile;
+    // Return the File object
+    return File(processedImageFilePath);
   }
 
   Future<void> _readTextFromImage(ImageSource source) async {
