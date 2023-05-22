@@ -44,6 +44,7 @@ dependencies:
   intl: ^0.18.1
   html: ^0.15.3
   image_cropper: ^4.0.1
+  image_crop: ^0.4.1
 
 dev_dependencies:
   flutter_test:

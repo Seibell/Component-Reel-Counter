@@ -50,6 +50,7 @@ class _LabelOCRState extends State<LabelOCR> {
   bool _isSaved = false;
   final ValueNotifier<File?> _croppedImageNotifier = ValueNotifier<File?>(null);
   final TextEditingController _textEditingController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   Future<File?> _cropImage(File originalImageFile) async {
     final croppedFile = await ImageCropper().cropImage(
@@ -74,11 +75,12 @@ class _LabelOCRState extends State<LabelOCR> {
             ],
       uiSettings: [
         AndroidUiSettings(
-            toolbarTitle: 'Crop Image',
-            toolbarColor: Colors.blue,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
+          toolbarTitle: 'Crop Image',
+          toolbarColor: const Color.fromARGB(255, 8, 9, 10),
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
+        ),
         IOSUiSettings(
           title: 'Crop Image',
         ),
@@ -165,144 +167,156 @@ class _LabelOCRState extends State<LabelOCR> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        buttonTheme: const ButtonThemeData(
-          buttonColor: Colors.blue, //  <-- dark color
-          textTheme: ButtonTextTheme.primary,
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          buttonTheme: const ButtonThemeData(
+            buttonColor: Colors.blue, //  <-- dark color
+            textTheme: ButtonTextTheme.primary,
+          ),
         ),
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Label OCR'),
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Row(
+        home: GestureDetector(
+          onTap: () {
+            FocusScopeNode currentFocus = FocusScope.of(context);
+            if (!currentFocus.hasPrimaryFocus) {
+              currentFocus.unfocus(); // dismiss keyboard
+            }
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Label OCR'),
+            ),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
-                    ElevatedButton(
-                      onPressed: () => _readTextFromImage(ImageSource.camera),
-                      child: const Padding(
-                        padding: EdgeInsets.all(15.0),
-                        child: const Text('Capture Image'),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        ElevatedButton(
+                          onPressed: () =>
+                              _readTextFromImage(ImageSource.camera),
+                          child: const Padding(
+                            padding: EdgeInsets.all(15.0),
+                            child: const Text('Capture Image'),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(32.0),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => _readTextFromImage(ImageSource.gallery),
-                      child: const Padding(
-                        padding: EdgeInsets.all(15.0),
-                        child: const Text('Upload Image'),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32.0),
+                        ElevatedButton(
+                          onPressed: () =>
+                              _readTextFromImage(ImageSource.gallery),
+                          child: const Padding(
+                            padding: EdgeInsets.all(15.0),
+                            child: const Text('Upload Image'),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(32.0),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const Text(
-                  'Extracted Text:',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Card(
-                  elevation: 5,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 400,
-                      height: 150,
-                      child: ValueListenableBuilder<String>(
-                        valueListenable: _extractedTextNotifier,
-                        builder: (context, value, child) {
-                          if (value.isNotEmpty &&
-                              _textEditingController.text.isEmpty) {
-                            _textEditingController.text = value;
-                            _isSaved = false;
-                          }
-                          return _textEditingController.text.isEmpty
-                              ? _isLoading
-                                  ? const Center(
-                                      child: Text("Extracting text..."))
-                                  : const Center(
-                                      child: Text("No text extracted"))
-                              : SingleChildScrollView(
-                                  child: TextField(
-                                    controller: _textEditingController,
-                                    maxLines: null,
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
                     const Text(
-                      'Cropped Image:',
+                      'Extracted Text:',
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    ElevatedButton(
-                      onPressed: _isSaved
-                          ? null
-                          : () {
-                              saveExtractedText(_textEditingController.text);
-                              setState(() {
-                                _isSaved = true;
-                              });
+                    Card(
+                      elevation: 5,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: 400,
+                          height: 150,
+                          child: ValueListenableBuilder<String>(
+                            valueListenable: _extractedTextNotifier,
+                            builder: (context, value, child) {
+                              if (value.isNotEmpty &&
+                                  _textEditingController.text.isEmpty) {
+                                _textEditingController.text = value;
+                                _isSaved = false;
+                              }
+                              return _textEditingController.text.isEmpty
+                                  ? _isLoading
+                                      ? const Center(
+                                          child: Text("Extracting text..."))
+                                      : const Center(
+                                          child: Text("No text extracted"))
+                                  : SingleChildScrollView(
+                                      child: TextField(
+                                        controller: _textEditingController,
+                                        focusNode: _focusNode,
+                                        maxLines: null,
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                    );
                             },
-                      child: const Text('Save Text'),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        const Text(
+                          'Cropped Image:',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        ElevatedButton(
+                          onPressed: _isSaved
+                              ? null
+                              : () {
+                                  saveExtractedText(
+                                      _textEditingController.text);
+                                  setState(() {
+                                    _isSaved = true;
+                                  });
+                                },
+                          child: const Text('Save Text'),
+                        ),
+                      ],
+                    ),
+                    Card(
+                      elevation: 5,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: 400,
+                          height: 150,
+                          child: ValueListenableBuilder<File?>(
+                            valueListenable: _croppedImageNotifier,
+                            builder: (context, file, child) {
+                              if (file != null) {
+                                return Image.file(
+                                  file,
+                                  fit: BoxFit.cover,
+                                );
+                              } else {
+                                return const Center(
+                                    child: Text('No image selected'));
+                              }
+                            },
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                Card(
-                  elevation: 5,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 400,
-                      height: 150,
-                      child: ValueListenableBuilder<File?>(
-                        valueListenable: _croppedImageNotifier,
-                        builder: (context, file, child) {
-                          if (file != null) {
-                            return Image.file(
-                              file,
-                              fit: BoxFit.cover,
-                            );
-                          } else {
-                            return const Center(
-                                child: Text('No image selected'));
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }
