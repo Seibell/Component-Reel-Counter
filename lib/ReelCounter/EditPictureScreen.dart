@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'dart:math';
 
 class EditPictureScreen extends StatefulWidget {
   final XFile imageFile;
@@ -19,19 +20,8 @@ class EditPictureScreen extends StatefulWidget {
 class _EditPictureScreenState extends State<EditPictureScreen> {
   GlobalKey globalKey = GlobalKey();
   List<List<Offset>> lines = [];
-
-  void _updateLineEndpoints(Offset startPoint, Offset endPoint) {
-    setState(() {
-      if (lines.isEmpty) {
-        lines.add([startPoint, endPoint]);
-      } else if (lines.length == 1) {
-        lines[0] = [startPoint, endPoint];
-      } else {
-        lines.clear();
-        lines.add([startPoint, endPoint]);
-      }
-    });
-  }
+  Offset startPoint = Offset(0, 0);
+  Offset endPoint = Offset(0, 0);
 
   Future<void> _saveImage() async {
     RenderRepaintBoundary boundary =
@@ -72,6 +62,25 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     });
   }
 
+  void updateLine(Offset newPoint) {
+    final dx = newPoint.dx - startPoint.dx;
+    final dy = newPoint.dy - startPoint.dy;
+    final length = min(
+        sqrt(dx * dx + dy * dy), 200.0); // Maximum line length of 200 pixels
+    final angle = atan2(dy, dx);
+
+    endPoint = Offset(
+      startPoint.dx + length * cos(angle),
+      startPoint.dy + length * sin(angle),
+    );
+  }
+
+  void clearLines() {
+    setState(() {
+      lines.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     double appBarHeight = AppBar().preferredSize.height;
@@ -84,6 +93,11 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
         title: Text('Edit Picture'),
         actions: <Widget>[
           IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: clearLines,
+            tooltip: 'Clear Lines',
+          ),
+          IconButton(
             icon: const Icon(Icons.save),
             onPressed: _saveImage,
             tooltip: 'Save Image',
@@ -93,17 +107,22 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
       body: GestureDetector(
         onPanDown: (details) {
           RenderBox box = context.findRenderObject() as RenderBox;
-          Offset startPoint = box.globalToLocal(details.globalPosition);
-          Offset endPoint = box.globalToLocal(details.globalPosition);
-          _updateLineEndpoints(
-              Offset(startPoint.dx, startPoint.dy - appBarHeight),
-              Offset(endPoint.dx, endPoint.dy - appBarHeight));
+          startPoint = box.globalToLocal(details.globalPosition) -
+              Offset(0, appBarHeight + statusBarHeight);
+          updateLine(startPoint);
         },
         onPanUpdate: (details) {
           RenderBox box = context.findRenderObject() as RenderBox;
-          Offset endPoint = box.globalToLocal(details.globalPosition);
-          _updateLineEndpoints(
-              lines[0][0], Offset(endPoint.dx, endPoint.dy - appBarHeight));
+          Offset newPoint = box.globalToLocal(details.globalPosition) -
+              Offset(0, appBarHeight + statusBarHeight);
+          updateLine(newPoint);
+        },
+        onPanEnd: (details) {
+          lines.add([startPoint, endPoint]);
+          setState(() {
+            startPoint = Offset(0, 0);
+            endPoint = Offset(0, 0);
+          });
         },
         child: Column(
           children: [
@@ -117,7 +136,10 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
                       fit: BoxFit.cover,
                     ),
                     CustomPaint(
-                      painter: LinePainter(lines: lines),
+                      painter: LinePainter(
+                          lines: lines,
+                          startPoint: startPoint,
+                          endPoint: endPoint),
                     ),
                   ],
                 ),
@@ -132,8 +154,11 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
 
 class LinePainter extends CustomPainter {
   final List<List<Offset>> lines;
+  final Offset startPoint;
+  final Offset endPoint;
 
-  LinePainter({required this.lines});
+  LinePainter(
+      {required this.lines, required this.startPoint, required this.endPoint});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -143,6 +168,10 @@ class LinePainter extends CustomPainter {
 
     for (var line in lines) {
       canvas.drawLine(line[0], line[1], paint);
+    }
+
+    if (startPoint != Offset(0, 0) && endPoint != Offset(0, 0)) {
+      canvas.drawLine(startPoint, endPoint, paint);
     }
   }
 
