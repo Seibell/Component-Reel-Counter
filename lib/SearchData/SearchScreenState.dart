@@ -25,6 +25,7 @@ class _SearchScreenState extends State<SearchScreen> {
   int rowsPerPage = 9;
 
   // Variables for search function
+  final FocusNode _focusNode = FocusNode();
   bool _showSearchBar = false;
   TextEditingController _searchController = TextEditingController();
 
@@ -135,144 +136,153 @@ class _SearchScreenState extends State<SearchScreen> {
   // Build the widget tree for this screen
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search OCR Text'),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () {
-              // Toggle the search bar visibility
-              setState(() {
-                _showSearchBar = !_showSearchBar;
-              });
-            },
-            icon: const Icon(Icons.search),
-          ),
-          IconButton(
-            onPressed: _deleteSelectedItems,
-            icon: const Icon(Icons.delete),
-          ),
-          IconButton(
-            onPressed: _copySelectedItems,
-            icon: const Icon(Icons.copy),
-          ),
-          IconButton(
-            onPressed: _shareSelectedItems,
-            icon: const Icon(Icons.share),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (_showSearchBar)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                onChanged: (value) {
-                  _searchController.text = value;
-                  // Perform search based on the entered value
+    return GestureDetector(
+        onTap: () {
+          FocusScopeNode currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus) {
+            currentFocus.unfocus(); // dismiss keyboard
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Search OCR Text'),
+            actions: <Widget>[
+              IconButton(
+                onPressed: () {
+                  // Toggle the search bar visibility
                   setState(() {
-                    _fetchData();
+                    _showSearchBar = !_showSearchBar;
                   });
                 },
-                decoration: const InputDecoration(
-                  labelText: 'Search',
-                  border: OutlineInputBorder(),
-                ),
+                icon: const Icon(Icons.search),
               ),
-            ),
-          Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _data,
-              builder: (BuildContext context,
-                  AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else {
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else {
-                    List<Map<String, dynamic>> sortedData =
-                        List.from(snapshot.data!);
-
-                    List<DataRow> dataRows = sortedData.map((row) {
-                      final itemId = row[DatabaseHelper.columnId];
-                      final itemText = row[DatabaseHelper.columnText];
-
-                      return DataRow(
-                        cells: [
-                          DataCell(Checkbox(
-                            value: _selectedItems.containsKey(itemId),
-                            onChanged: (value) {
-                              setState(() {
-                                if (value!) {
-                                  _selectedItems[itemId] = itemText;
-                                } else {
-                                  _selectedItems.remove(itemId);
-                                }
-                              });
-                            },
-                          )),
-                          DataCell(Text(formattedTimestamp(
-                              row[DatabaseHelper.columnTimestamp]))),
-                          DataCell(
-                            ConstrainedBox(
-                              constraints: BoxConstraints(maxHeight: 100),
-                              child: InkWell(
-                                onTap: () {
-                                  Clipboard.setData(
-                                    ClipboardData(text: itemText),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content:
-                                            Text("Text copied to clipboard")),
-                                  );
-                                },
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.vertical,
-                                  child: Text(
-                                    itemText,
-                                    softWrap: true,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList();
-
-                    return DataTable(
-                      columnSpacing: 15,
-                      columns: [
-                        DataColumn(label: Text('Select')),
-                        DataColumn(label: Text('Timestamp')),
-                        DataColumn(label: Text('Text')),
-                      ],
-                      rows: dataRows,
-                    );
-                  }
-                }
-              },
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
               IconButton(
-                onPressed: _fetchPreviousPage,
-                icon: Icon(Icons.arrow_back),
+                onPressed: _deleteSelectedItems,
+                icon: const Icon(Icons.delete),
               ),
-              Text('Page ${page + 1}'),
               IconButton(
-                onPressed: _fetchNextPage,
-                icon: Icon(Icons.arrow_forward),
+                onPressed: _copySelectedItems,
+                icon: const Icon(Icons.copy),
+              ),
+              IconButton(
+                onPressed: _shareSelectedItems,
+                icon: const Icon(Icons.share),
               ),
             ],
           ),
-        ],
-      ),
-    );
+          body: Column(
+            children: [
+              if (_showSearchBar)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    focusNode: _focusNode,
+                    onChanged: (value) {
+                      _searchController.text = value;
+                      // Perform search based on the entered value
+                      setState(() {
+                        _fetchData();
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Search',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _data,
+                  builder: (BuildContext context,
+                      AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else {
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else {
+                        List<Map<String, dynamic>> sortedData =
+                            List.from(snapshot.data!);
+
+                        List<DataRow> dataRows = sortedData.map((row) {
+                          final itemId = row[DatabaseHelper.columnId];
+                          final itemText = row[DatabaseHelper.columnText];
+
+                          return DataRow(
+                            cells: [
+                              DataCell(Checkbox(
+                                value: _selectedItems.containsKey(itemId),
+                                onChanged: (value) {
+                                  setState(() {
+                                    if (value!) {
+                                      _selectedItems[itemId] = itemText;
+                                    } else {
+                                      _selectedItems.remove(itemId);
+                                    }
+                                  });
+                                },
+                              )),
+                              DataCell(Text(formattedTimestamp(
+                                  row[DatabaseHelper.columnTimestamp]))),
+                              DataCell(
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(maxHeight: 100),
+                                  child: InkWell(
+                                    onTap: () {
+                                      Clipboard.setData(
+                                        ClipboardData(text: itemText),
+                                      );
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                "Text copied to clipboard")),
+                                      );
+                                    },
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.vertical,
+                                      child: Text(
+                                        itemText,
+                                        softWrap: true,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList();
+
+                        return DataTable(
+                          columnSpacing: 15,
+                          columns: [
+                            DataColumn(label: Text('Select')),
+                            DataColumn(label: Text('Timestamp')),
+                            DataColumn(label: Text('Text')),
+                          ],
+                          rows: dataRows,
+                        );
+                      }
+                    }
+                  },
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  IconButton(
+                    onPressed: _fetchPreviousPage,
+                    icon: Icon(Icons.arrow_back),
+                  ),
+                  Text('Page ${page + 1}'),
+                  IconButton(
+                    onPressed: _fetchNextPage,
+                    icon: Icon(Icons.arrow_forward),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ));
   }
 }

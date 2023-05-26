@@ -10,6 +10,7 @@ class _ReelCounterState extends State<ReelCounter> {
   //New variables that need to be set by user
   //This value is in milimeters (mm)
   final TextEditingController widthOfRollController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   //Variables that should be fixed (selectable - based on reel type)
   //These values are in milimeteres (mm)
@@ -124,51 +125,57 @@ class _ReelCounterState extends State<ReelCounter> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reel Estimator'),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: widthOfRollController,
-                keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Width of Roll (mm)'),
+    return GestureDetector(
+        onTap: () {
+          FocusScopeNode currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus) {
+            currentFocus.unfocus(); // dismiss keyboard
+          }
+        },
+        child: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextField(
+                    controller: widthOfRollController,
+                    focusNode: _focusNode,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                        const InputDecoration(labelText: 'Width of Roll (mm)'),
+                  ),
+                  DropdownButton<String>(
+                    hint: const Text('Select Reel Type'),
+                    value: selectedType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedType = newValue;
+                      });
+                      updateValuesForSelectedReelType(newValue);
+                    },
+                    items:
+                        _reelType.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                  ElevatedButton(
+                    onPressed: _calculateReelEstimate,
+                    child: const Text('Calculate Reel Estimate'),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _result,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ],
               ),
-              DropdownButton<String>(
-                hint: const Text('Select Reel Type'),
-                value: selectedType,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedType = newValue;
-                  });
-                  updateValuesForSelectedReelType(newValue);
-                },
-                items: _reelType.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              ElevatedButton(
-                onPressed: _calculateReelEstimate,
-                child: const Text('Calculate Reel Estimate'),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                _result,
-                style: const TextStyle(fontSize: 18),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

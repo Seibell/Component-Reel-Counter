@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'LabelOCR/LabelOCR.dart';
-import 'ReelCounter/ReelCounter.dart';
+import 'ReelCounter/DefaultTabController.dart';
 import 'SearchData/SearchScreenState.dart';
 import 'package:flutter/services.dart';
 
@@ -40,7 +40,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   int _selectedIndex = 0;
 
   static List<Widget> _widgetOptions = <Widget>[
-    ReelCounter(),
+    DefaultTab(),
     LabelOCR(),
     SearchScreen(),
   ];
