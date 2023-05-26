@@ -22,6 +22,8 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
   List<List<Offset>> lines = [];
   Offset startPoint = Offset(0, 0);
   Offset endPoint = Offset(0, 0);
+  int lineCount = 0;
+  bool canDrawLines = true;
 
   Future<void> _saveImage() async {
     RenderRepaintBoundary boundary =
@@ -66,7 +68,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     final dx = newPoint.dx - startPoint.dx;
     final dy = newPoint.dy - startPoint.dy;
     final length = min(
-        sqrt(dx * dx + dy * dy), 200.0); // Maximum line length of 200 pixels
+        sqrt(dx * dx + dy * dy), 2000.0); // Maximum line length of 200 pixels
     final angle = atan2(dy, dx);
 
     endPoint = Offset(
@@ -78,6 +80,10 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
   void clearLines() {
     setState(() {
       lines.clear();
+      lineCount = 0;
+      startPoint = Offset.zero;
+      endPoint = Offset.zero;
+      canDrawLines = true;
     });
   }
 
@@ -92,6 +98,22 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
       appBar: AppBar(
         title: Text('Edit Picture'),
         actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                '$lineCount/2',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: canDrawLines
+                      ? Colors.white
+                      : Colors
+                          .red, // Update color based on line drawing availability
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: clearLines,
@@ -118,11 +140,25 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           updateLine(newPoint);
         },
         onPanEnd: (details) {
-          lines.add([startPoint, endPoint]);
-          setState(() {
-            startPoint = Offset(0, 0);
-            endPoint = Offset(0, 0);
-          });
+          if (canDrawLines) {
+            lines.add([startPoint, endPoint]);
+            setState(() {
+              startPoint = Offset(0, 0);
+              endPoint = Offset(0, 0);
+              lineCount++;
+            });
+
+            if (lineCount >= 2) {
+              setState(() {
+                canDrawLines = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Maximum of 2 lines allowed.'),
+                ),
+              );
+            }
+          }
         },
         child: Column(
           children: [

@@ -83,8 +83,8 @@ class _CameraViewState extends State<CameraView> {
               ),
               Center(
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  width: 35,
+                  height: 35,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -99,7 +99,7 @@ class _CameraViewState extends State<CameraView> {
                 right: 20,
                 child: FloatingActionButton(
                   onPressed: takePictureAndEdit,
-                  child: Icon(Icons.camera),
+                  child: Icon(Icons.camera_alt),
                 ),
               ),
             ],
