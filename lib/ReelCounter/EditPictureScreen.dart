@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'dart:math';
+import './ReelTypeForm.dart';
 
 class EditPictureScreen extends StatefulWidget {
   final XFile imageFile;
@@ -42,6 +44,28 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     // Write the image bytes to the file.
     await imgFile.writeAsBytes(pngBytes);
 
+    // Calculate the average line length in terms of the real-life diameter of the center circle
+    final averageLineLength = calculateAverageLineLength();
+    const realLifeDiameter =
+        1.3; // The real-life diameter of the center circle is 1.3 cm
+    final scaleFactor = realLifeDiameter /
+        MediaQuery.of(context)
+            .size
+            .width; // The scale factor to convert from pixels to cm
+    final averageLineLengthInRealLife =
+        averageLineLength * scaleFactor; // The average line length in cm
+    final averageLineLengthInRealLifeInMM =
+        averageLineLengthInRealLife * 10; // Convert from cm to mmFF
+
+    // Create a Completer that completes when the BottomSheet is closed
+    Completer<void> bottomSheetCompleter = Completer();
+
+    // Shows bottom sheet to ask user for reel type + show reel count result
+    _showReelTypeForm(averageLineLengthInRealLifeInMM, bottomSheetCompleter);
+
+    // Wait for the BottomSheet to be closed
+    await bottomSheetCompleter.future;
+
     // Save the image to the gallery using gallery_saver
     GallerySaver.saveImage(imgFile.path, albumName: 'MyApp')
         .then((bool? success) {
@@ -64,11 +88,21 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     });
   }
 
+  void _showReelTypeForm(
+      double averageLineLengthInMM, Completer<void> completer) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return ReelTypeForm(averageLineLengthInMM, completer);
+      },
+    );
+  }
+
   void updateLine(Offset newPoint) {
     final dx = newPoint.dx - startPoint.dx;
     final dy = newPoint.dy - startPoint.dy;
     final length = min(
-        sqrt(dx * dx + dy * dy), 2000.0); // Maximum line length of 200 pixels
+        sqrt(dx * dx + dy * dy), 2000.0); // Maximum line length of 2000 pixels
     final angle = atan2(dy, dx);
 
     endPoint = Offset(
@@ -85,6 +119,26 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
       endPoint = Offset.zero;
       canDrawLines = true;
     });
+  }
+
+  double calculateLienLength(Offset start, Offset end) {
+    final dx = end.dx - start.dx;
+    final dy = end.dy - start.dy;
+
+    return sqrt(dx * dx + dy * dy);
+  }
+
+  double calculateAverageLineLength() {
+    if (lines.isEmpty) {
+      return 0.0;
+    }
+
+    double totalLength = 0.0;
+    for (var line in lines) {
+      totalLength += calculateLienLength(line[0], line[1]);
+    }
+
+    return totalLength / lines.length;
   }
 
   @override
