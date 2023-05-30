@@ -67,6 +67,7 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
     //Use formula to calculate estimated reel count
 
     double r = double.parse(widget.averageLineLengthInMM as String);
+    debugPrint(widget.averageLineLengthInMM as String);
     double h = internalHubDiameter;
     double m = tapeThickness;
 
@@ -143,10 +144,8 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
               child: Text(_result == null ? 'Submit' : 'OK'),
               onPressed: () {
                 if (_result == null) {
-                  setState(() {
-                    updateValuesForSelectedReelType(reelType);
-                    _calculateReelEstimate();
-                  });
+                  updateValuesForSelectedReelType(reelType);
+                  _calculateReelEstimate();
                 } else {
                   setState(() {
                     _result =
