@@ -148,7 +148,7 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
               ),
             ),
             ElevatedButton(
-              child: Text(result == null ? 'Submit' : 'OK'),
+              child: Text(_result == null ? 'Submit' : 'OK'),
               onPressed: () {
                 if (_result == null) {
                   setState(() {
@@ -164,7 +164,7 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
                 }
               },
             ),
-            if (result != null)
+            if (_result != null)
               Container(
                 margin: const EdgeInsets.all(10.0),
                 padding: const EdgeInsets.all(10.0),
