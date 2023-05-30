@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -14,6 +16,107 @@ class ReelTypeForm extends StatefulWidget {
 class _ReelTypeFormState extends State<ReelTypeForm> {
   String? reelType;
   String? result;
+  String? _result;
+
+  //New variables that need to be set by user
+  //This value is in milimeters (mm)
+  final TextEditingController widthOfRollController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  //Variables that should be fixed (selectable - based on reel type)
+  //These values are in milimeteres (mm)
+  double internalHubDiameter = 0.0;
+  double tapeThickness = 0.0;
+  double distanceBetweenComponents = 0.0;
+
+  void updateValuesForSelectedReelType(String? type) {
+    setState(() {
+      if (type == '0402') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 2.0;
+      } else if (type == '0603') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 4.0;
+      } else if (type == '0805') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 4.0;
+      } else if (type == '1206') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 4.0;
+      } else if (type == '1210') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.5;
+        distanceBetweenComponents = 4.0;
+      } else if (type == '1812') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.6;
+        distanceBetweenComponents = 8.0;
+      } else if (type == '2010') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.6;
+        distanceBetweenComponents = 8.0;
+      } else if (type == '2512') {
+        internalHubDiameter = 60.0;
+        tapeThickness = 0.6;
+        distanceBetweenComponents = 8.0;
+      }
+    });
+  }
+
+  void _calculateReelEstimate() {
+    if (widthOfRollController.text.isEmpty) {
+      return;
+    }
+
+    //Use formula to calculate estimated reel count
+
+    double r = double.parse(widthOfRollController.text);
+    double h = internalHubDiameter;
+    double m = tapeThickness;
+
+    /*
+    The outside diameter of the roll is the measured value of the hub,
+    plus twice the measured value R. Note that the measurement of R measures 
+    from the inside of the hub to the outside of the roll.
+    D=H+2R
+    */
+    double d = h + 2 * m;
+
+    /*
+    The inside diameter of the roll is the external diameter of the hub.
+    This is the measured internal diameter of the hub, plus twice the material thickness.
+    d=H+2m
+    */
+    double bigD = h + 2 * r;
+    /*
+    First, the number of windings on the reel is calculated.
+    Each winding adds the thickness of the tape over the entire circumference of the reel,
+    and so the diameter increases by twice the thickness for each winding.
+    From the difference between the outer diameter and the inner diameter of the roll, and the tape thickness,
+    the number of windings is easily calculated.
+    W=(D−d)/2T
+    */
+    double windings = (bigD - d) / (2 * tapeThickness);
+    /*
+    The roll of tape on the reel is a spiral.
+    The length of the tape spiralled on the reel is the circumference of the average diameter,
+    multiplied by the number of windings.
+    L=D+d2⋅W⋅π
+    */
+    double length = (bigD + d) / 2 * windings * pi;
+    /*
+    Once the length of the tape is known, the number of components follows by dividing it by the pitch.
+    */
+    int estimatedComponents = (length / distanceBetweenComponents).round();
+
+    setState(() {
+      _result = "Estimated components on reel: $estimatedComponents";
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +137,7 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
               onChanged: (String? newValue) {
                 setState(() {
                   reelType = newValue;
-                  if (result != null &&
-                      result !=
-                          'The average length of the lines for reel type $reelType is approximately ${widget.averageLineLengthInMM.toStringAsFixed(2)} mm.') {
+                  if (result != null) {
                     result =
                         null; // Reset the result if it's not the same as the current reelType
                   }
@@ -51,8 +152,8 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
               onPressed: () {
                 if (result == null) {
                   setState(() {
-                    result =
-                        'The average length of the lines for reel type $reelType is approximately ${widget.averageLineLengthInMM.toStringAsFixed(2)} mm.';
+                    updateValuesForSelectedReelType(reelType);
+                    _calculateReelEstimate();
                   });
                 } else {
                   setState(() {
@@ -71,7 +172,7 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(5.0),
                 ),
-                child: Text(result!),
+                child: Text(_result!),
               ),
           ],
         ),
