@@ -137,8 +137,8 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
               onChanged: (String? newValue) {
                 setState(() {
                   reelType = newValue;
-                  if (result != null) {
-                    result =
+                  if (_result != null) {
+                    _result =
                         null; // Reset the result if it's not the same as the current reelType
                   }
                 });
@@ -150,14 +150,14 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
             ElevatedButton(
               child: Text(result == null ? 'Submit' : 'OK'),
               onPressed: () {
-                if (result == null) {
+                if (_result == null) {
                   setState(() {
                     updateValuesForSelectedReelType(reelType);
                     _calculateReelEstimate();
                   });
                 } else {
                   setState(() {
-                    result =
+                    _result =
                         null; // Reset the result after the 'OK' button is pressed
                   });
                   widget.completer.complete();
