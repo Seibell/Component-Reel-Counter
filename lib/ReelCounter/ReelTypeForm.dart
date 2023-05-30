@@ -15,12 +15,8 @@ class ReelTypeForm extends StatefulWidget {
 
 class _ReelTypeFormState extends State<ReelTypeForm> {
   String? reelType;
-  String? result;
   String? _result;
 
-  //New variables that need to be set by user
-  //This value is in milimeters (mm)
-  final TextEditingController widthOfRollController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
   //Variables that should be fixed (selectable - based on reel type)
@@ -68,13 +64,9 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
   }
 
   void _calculateReelEstimate() {
-    if (widthOfRollController.text.isEmpty) {
-      return;
-    }
-
     //Use formula to calculate estimated reel count
 
-    double r = double.parse(widthOfRollController.text);
+    double r = double.parse(widget.averageLineLengthInMM as String);
     double h = internalHubDiameter;
     double m = tapeThickness;
 
