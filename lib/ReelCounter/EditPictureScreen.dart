@@ -9,7 +9,6 @@ import 'package:flutter/rendering.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'dart:math';
 import './ReelTypeForm.dart';
-import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 
 class EditPictureScreen extends StatefulWidget {
   final XFile imageFile;
@@ -22,13 +21,56 @@ class EditPictureScreen extends StatefulWidget {
 
 class _EditPictureScreenState extends State<EditPictureScreen> {
   GlobalKey globalKey = GlobalKey();
-  List<List<Offset>> lines = [];
-  Offset startPoint = Offset(0, 0);
-  Offset endPoint = Offset(0, 0);
-  int lineCount = 0;
-  bool canDrawLines = true;
+  Offset topLeft = Offset(0, 0);
+  Offset topRight = Offset(0, 0);
+  Offset bottomLeft = Offset(0, 0);
+  Offset bottomRight = Offset(0, 0);
 
-  Matrix4 matrix = Matrix4.identity();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      setInitialBoxCoordinates();
+    });
+  }
+
+  void setInitialBoxCoordinates() {
+    final screenSize = MediaQuery.of(context).size;
+    final initialLength = screenSize.width * 0.4;
+    final initialWidth = screenSize.height * 0.2;
+
+    setState(() {
+      topLeft = Offset(screenSize.width / 2 - initialLength / 2,
+          screenSize.height / 2 - initialWidth / 2);
+      topRight = Offset(screenSize.width / 2 + initialLength / 2,
+          screenSize.height / 2 - initialWidth / 2);
+      bottomLeft = Offset(screenSize.width / 2 - initialLength / 2,
+          screenSize.height / 2 + initialWidth / 2);
+      bottomRight = Offset(screenSize.width / 2 + initialLength / 2,
+          screenSize.height / 2 + initialWidth / 2);
+    });
+  }
+
+  void resetBoxCoordinates() {
+    setInitialBoxCoordinates();
+  }
+
+  void _showReelTypeForm(double averageBoxDiagonalLengthInRealLifeInMM,
+      Completer<void> completer) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return ReelTypeForm(averageBoxDiagonalLengthInRealLifeInMM, completer);
+      },
+    );
+  }
+
+  double calculateAverageBoxLength() {
+    final double length1 = (topLeft - topRight).distance;
+    final double length2 = (topRight - bottomRight).distance;
+
+    return (length1 + length2) / 2;
+  }
 
   Future<void> _saveImage() async {
     RenderRepaintBoundary boundary =
@@ -47,25 +89,27 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     // Write the image bytes to the file.
     await imgFile.writeAsBytes(pngBytes);
 
-    // Calculate the average line length in terms of the real-life diameter of the center circle
-    final averageLineLength = calculateAverageLineLength();
+    // Calculate the average box diagonal length in terms of the real-life diameter of the center circle
+    final averageBoxDiagonalLength = calculateAverageBoxLength();
     final double realLifeDiameterCm =
         1.3; // The real-life diameter of the center circle is 1.3 cm
     final double diameterInPixels =
         35.0; // The diameter of the circle on the screen is 35 pixels
     final double scaleFactor = realLifeDiameterCm / diameterInPixels;
-    final averageLineLengthInRealLife =
-        averageLineLength * scaleFactor; // The average line length in cm
-    final averageLineLengthInRealLifeInMM =
-        averageLineLengthInRealLife * 10; // Convert from cm to mm
+    final averageBoxDiagonalLengthInRealLife = averageBoxDiagonalLength *
+        scaleFactor; // The average box diagonal length in cm
+    final averageBoxDiagonalLengthInRealLifeInMM =
+        averageBoxDiagonalLengthInRealLife * 10; // Convert from cm to mm
 
-    print("Average line length in MM: ${averageLineLengthInRealLifeInMM}");
+    print(
+        "Average box diagonal length in MM: ${averageBoxDiagonalLengthInRealLifeInMM}");
 
     // Create a Completer that completes when the BottomSheet is closed
     Completer<void> bottomSheetCompleter = Completer();
 
     // Shows bottom sheet to ask user for reel type + show reel count result
-    _showReelTypeForm(averageLineLengthInRealLifeInMM, bottomSheetCompleter);
+    _showReelTypeForm(
+        averageBoxDiagonalLengthInRealLifeInMM, bottomSheetCompleter);
 
     // Wait for the BottomSheet to be closed
     await bottomSheetCompleter.future;
@@ -92,90 +136,16 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     });
   }
 
-  void _showReelTypeForm(
-      double averageLineLengthInMM, Completer<void> completer) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return ReelTypeForm(averageLineLengthInMM, completer);
-      },
-    );
-  }
-
-  void updateLine(Offset newPoint) {
-    final dx = newPoint.dx - startPoint.dx;
-    final dy = newPoint.dy - startPoint.dy;
-    final length = min(
-        sqrt(dx * dx + dy * dy), 2000.0); // Maximum line length of 2000 pixels
-    final angle = atan2(dy, dx);
-
-    endPoint = Offset(
-      startPoint.dx + length * cos(angle),
-      startPoint.dy + length * sin(angle),
-    );
-  }
-
-  void clearLines() {
-    setState(() {
-      lines.clear();
-      lineCount = 0;
-      startPoint = Offset.zero;
-      endPoint = Offset.zero;
-      canDrawLines = true;
-    });
-  }
-
-  double calculateLienLength(Offset start, Offset end) {
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-
-    return sqrt(dx * dx + dy * dy);
-  }
-
-  double calculateAverageLineLength() {
-    if (lines.isEmpty) {
-      return 0.0;
-    }
-
-    double totalLength = 0.0;
-    for (var line in lines) {
-      totalLength += calculateLienLength(line[0], line[1]);
-    }
-
-    return totalLength / lines.length;
-  }
-
   @override
   Widget build(BuildContext context) {
-    double appBarHeight = AppBar().preferredSize.height;
-    double statusBarHeight = MediaQuery.of(context).padding.top;
-    double screenHeight =
-        MediaQuery.of(context).size.height - appBarHeight - statusBarHeight;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Picture'),
         actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Center(
-              child: Text(
-                '$lineCount/2',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: canDrawLines
-                      ? Colors.white
-                      : Colors
-                          .red, // Update color based on line drawing availability
-                ),
-              ),
-            ),
-          ),
           IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: clearLines,
-            tooltip: 'Clear Lines',
+            icon: const Icon(Icons.restore),
+            onPressed: resetBoxCoordinates,
+            tooltip: 'Reset Box',
           ),
           IconButton(
             icon: const Icon(Icons.save),
@@ -184,110 +154,116 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           ),
         ],
       ),
-      body: MatrixGestureDetector(
-        onMatrixUpdate: (Matrix4 m, Matrix4 tm, Matrix4 sm, Matrix4 rm) {
-          setState(() {
-            matrix = m;
-          });
-        },
-        child: Transform(
-          transform: matrix,
-          child: GestureDetector(
-            onPanDown: (details) {
-              RenderBox box = context.findRenderObject() as RenderBox;
-              startPoint = box.globalToLocal(details.globalPosition) -
-                  Offset(0, appBarHeight + statusBarHeight);
-              updateLine(startPoint);
-            },
-            onPanUpdate: (details) {
-              RenderBox box = context.findRenderObject() as RenderBox;
-              Offset newPoint = box.globalToLocal(details.globalPosition) -
-                  Offset(0, appBarHeight + statusBarHeight);
-              updateLine(newPoint);
-            },
-            onPanEnd: (details) {
-              if (canDrawLines) {
-                lines.add([startPoint, endPoint]);
-                setState(() {
-                  startPoint = Offset(0, 0);
-                  endPoint = Offset(0, 0);
-                  lineCount++;
-                });
+      body: GestureDetector(
+        onPanDown: (details) {
+          final touchPoint = details.localPosition;
+          final double touchTolerance = 20.0;
 
-                if (lineCount >= 2) {
-                  setState(() {
-                    canDrawLines = false;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Maximum of 2 lines allowed.'),
-                    ),
-                  );
-                }
-              }
-            },
-            child: Column(
-              children: [
-                Expanded(
-                  child: RepaintBoundary(
-                    key: globalKey,
-                    child: Stack(
-                      children: [
-                        Image.file(
-                          File(widget.imageFile.path),
-                          fit: BoxFit.cover,
-                        ),
-                        CustomPaint(
-                          painter: LinePainter(
-                              lines: lines,
-                              startPoint: startPoint,
-                              endPoint: endPoint,
-                              matrix: matrix),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+          if ((topLeft - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              topLeft = touchPoint;
+              topRight = Offset(topRight.dx, touchPoint.dy);
+              bottomLeft = Offset(touchPoint.dx, bottomLeft.dy);
+            });
+          } else if ((topRight - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              topRight = touchPoint;
+              topLeft = Offset(topLeft.dx, touchPoint.dy);
+              bottomRight = Offset(touchPoint.dx, bottomRight.dy);
+            });
+          } else if ((bottomLeft - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              bottomLeft = touchPoint;
+              topLeft = Offset(touchPoint.dx, topLeft.dy);
+              bottomRight = Offset(bottomRight.dx, touchPoint.dy);
+            });
+          } else if ((bottomRight - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              bottomRight = touchPoint;
+              topRight = Offset(touchPoint.dx, topRight.dy);
+              bottomLeft = Offset(bottomLeft.dx, touchPoint.dy);
+            });
+          }
+        },
+        onPanUpdate: (details) {
+          final touchPoint = details.localPosition;
+          final double touchTolerance = 20.0;
+
+          if ((topLeft - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              topLeft = touchPoint;
+              topRight = Offset(topRight.dx, touchPoint.dy);
+              bottomLeft = Offset(touchPoint.dx, bottomLeft.dy);
+            });
+          } else if ((topRight - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              topRight = touchPoint;
+              topLeft = Offset(topLeft.dx, touchPoint.dy);
+              bottomRight = Offset(touchPoint.dx, bottomRight.dy);
+            });
+          } else if ((bottomLeft - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              bottomLeft = touchPoint;
+              topLeft = Offset(touchPoint.dx, topLeft.dy);
+              bottomRight = Offset(bottomRight.dx, touchPoint.dy);
+            });
+          } else if ((bottomRight - touchPoint).distance <= touchTolerance) {
+            setState(() {
+              bottomRight = touchPoint;
+              topRight = Offset(touchPoint.dx, topRight.dy);
+              bottomLeft = Offset(bottomLeft.dx, touchPoint.dy);
+            });
+          }
+        },
+        child: Stack(
+          children: [
+            RepaintBoundary(
+              key: globalKey,
+              child: Image.file(
+                File(widget.imageFile.path),
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+              ),
             ),
-          ),
+            CustomPaint(
+              painter: BoxPainter(
+                topLeft: topLeft,
+                topRight: topRight,
+                bottomLeft: bottomLeft,
+                bottomRight: bottomRight,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class LinePainter extends CustomPainter {
-  final List<List<Offset>> lines;
-  final Offset startPoint;
-  final Offset endPoint;
-  final Matrix4 matrix;
+class BoxPainter extends CustomPainter {
+  final Offset topLeft;
+  final Offset topRight;
+  final Offset bottomLeft;
+  final Offset bottomRight;
 
-  LinePainter({
-    required this.lines,
-    required this.startPoint,
-    required this.endPoint,
-    required this.matrix,
+  BoxPainter({
+    required this.topLeft,
+    required this.topRight,
+    required this.bottomLeft,
+    required this.bottomRight,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.transform(matrix.storage);
-
     final paint = Paint()
       ..color = Colors.red
       ..strokeWidth = 2.0;
 
-    for (var line in lines) {
-      canvas.drawLine(line[0], line[1], paint);
-    }
-
-    if (startPoint != Offset(0, 0) && endPoint != Offset(0, 0)) {
-      canvas.drawLine(startPoint, endPoint, paint);
-    }
-
-    canvas.restore();
+    canvas.drawLine(topLeft, topRight, paint);
+    canvas.drawLine(topRight, bottomRight, paint);
+    canvas.drawLine(bottomRight, bottomLeft, paint);
+    canvas.drawLine(bottomLeft, topLeft, paint);
   }
 
   @override
