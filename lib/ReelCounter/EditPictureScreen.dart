@@ -46,16 +46,15 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
 
     // Calculate the average line length in terms of the real-life diameter of the center circle
     final averageLineLength = calculateAverageLineLength();
-    const realLifeDiameter =
-        1.3; // The real-life diameter of the center circle is 1.3 cm
-    final scaleFactor = realLifeDiameter /
-        MediaQuery.of(context)
-            .size
-            .width; // The scale factor to convert from pixels to cm
+    final double realLifeDiameterCm =
+        1.4; // The real-life diameter of the center circle is 1.4 cm
+    final double diameterInPixels =
+        35.0; // The diameter of the circle on the screen is 35 pixels
+    final double scaleFactor = realLifeDiameterCm / diameterInPixels;
     final averageLineLengthInRealLife =
         averageLineLength * scaleFactor; // The average line length in cm
     final averageLineLengthInRealLifeInMM =
-        averageLineLengthInRealLife * 10; // Convert from cm to mmFF
+        averageLineLengthInRealLife * 10; // Convert from cm to mm
 
     // Create a Completer that completes when the BottomSheet is closed
     Completer<void> bottomSheetCompleter = Completer();
