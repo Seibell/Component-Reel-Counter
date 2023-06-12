@@ -40,28 +40,28 @@ class _ReelCounterState extends State<ReelCounter> {
     setState(() {
       internalHubDiameter = 60.0;
       if (type == '0402') {
-        tapeThickness = 0.85;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 2.0;
       } else if (type == '0603') {
-        tapeThickness = 0.9;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 4.0;
       } else if (type == '0805') {
-        tapeThickness = 0.95;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 4.0;
       } else if (type == '1206') {
-        tapeThickness = 1.1;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 4.0;
       } else if (type == '1210') {
-        tapeThickness = 1.25;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 4.0;
       } else if (type == '1218') {
-        tapeThickness = 1.15;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 4.0;
       } else if (type == '2010') {
-        tapeThickness = 1.2;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 4.0;
       } else if (type == '2512') {
-        tapeThickness = 1.2;
+        tapeThickness = 0.5;
         distanceBetweenComponents = 8.0;
       }
     });
