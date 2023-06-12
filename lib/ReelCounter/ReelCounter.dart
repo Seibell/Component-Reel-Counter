@@ -38,7 +38,7 @@ class _ReelCounterState extends State<ReelCounter> {
   //and: https://www.onsemi.com/pub/collateral/brd8011-d.pdf
   void updateValuesForSelectedReelType(String? type) {
     setState(() {
-      internalHubDiameter = 60.0;
+      internalHubDiameter = 56.5;
       if (type == '0402') {
         tapeThickness = 0.85;
         distanceBetweenComponents = 2.0;

@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'dart:math';
 import './ReelTypeForm.dart';
+import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 
 class EditPictureScreen extends StatefulWidget {
   final XFile imageFile;
@@ -26,6 +27,8 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
   Offset endPoint = Offset(0, 0);
   int lineCount = 0;
   bool canDrawLines = true;
+
+  Matrix4 matrix = Matrix4.identity();
 
   Future<void> _saveImage() async {
     RenderRepaintBoundary boundary =
@@ -47,7 +50,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     // Calculate the average line length in terms of the real-life diameter of the center circle
     final averageLineLength = calculateAverageLineLength();
     final double realLifeDiameterCm =
-        1.4; // The real-life diameter of the center circle is 1.4 cm
+        1.3; // The real-life diameter of the center circle is 1.3 cm
     final double diameterInPixels =
         35.0; // The diameter of the circle on the screen is 35 pixels
     final double scaleFactor = realLifeDiameterCm / diameterInPixels;
@@ -55,6 +58,8 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
         averageLineLength * scaleFactor; // The average line length in cm
     final averageLineLengthInRealLifeInMM =
         averageLineLengthInRealLife * 10; // Convert from cm to mm
+
+    print("Average line length in MM: ${averageLineLengthInRealLifeInMM}");
 
     // Create a Completer that completes when the BottomSheet is closed
     Completer<void> bottomSheetCompleter = Completer();
@@ -179,62 +184,73 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           ),
         ],
       ),
-      body: GestureDetector(
-        onPanDown: (details) {
-          RenderBox box = context.findRenderObject() as RenderBox;
-          startPoint = box.globalToLocal(details.globalPosition) -
-              Offset(0, appBarHeight + statusBarHeight);
-          updateLine(startPoint);
+      body: MatrixGestureDetector(
+        onMatrixUpdate: (Matrix4 m, Matrix4 tm, Matrix4 sm, Matrix4 rm) {
+          setState(() {
+            matrix = m;
+          });
         },
-        onPanUpdate: (details) {
-          RenderBox box = context.findRenderObject() as RenderBox;
-          Offset newPoint = box.globalToLocal(details.globalPosition) -
-              Offset(0, appBarHeight + statusBarHeight);
-          updateLine(newPoint);
-        },
-        onPanEnd: (details) {
-          if (canDrawLines) {
-            lines.add([startPoint, endPoint]);
-            setState(() {
-              startPoint = Offset(0, 0);
-              endPoint = Offset(0, 0);
-              lineCount++;
-            });
+        child: Transform(
+          transform: matrix,
+          child: GestureDetector(
+            onPanDown: (details) {
+              RenderBox box = context.findRenderObject() as RenderBox;
+              startPoint = box.globalToLocal(details.globalPosition) -
+                  Offset(0, appBarHeight + statusBarHeight);
+              updateLine(startPoint);
+            },
+            onPanUpdate: (details) {
+              RenderBox box = context.findRenderObject() as RenderBox;
+              Offset newPoint = box.globalToLocal(details.globalPosition) -
+                  Offset(0, appBarHeight + statusBarHeight);
+              updateLine(newPoint);
+            },
+            onPanEnd: (details) {
+              if (canDrawLines) {
+                lines.add([startPoint, endPoint]);
+                setState(() {
+                  startPoint = Offset(0, 0);
+                  endPoint = Offset(0, 0);
+                  lineCount++;
+                });
 
-            if (lineCount >= 2) {
-              setState(() {
-                canDrawLines = false;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Maximum of 2 lines allowed.'),
-                ),
-              );
-            }
-          }
-        },
-        child: Column(
-          children: [
-            Expanded(
-              child: RepaintBoundary(
-                key: globalKey,
-                child: Stack(
-                  children: [
-                    Image.file(
-                      File(widget.imageFile.path),
-                      fit: BoxFit.cover,
+                if (lineCount >= 2) {
+                  setState(() {
+                    canDrawLines = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Maximum of 2 lines allowed.'),
                     ),
-                    CustomPaint(
-                      painter: LinePainter(
-                          lines: lines,
-                          startPoint: startPoint,
-                          endPoint: endPoint),
+                  );
+                }
+              }
+            },
+            child: Column(
+              children: [
+                Expanded(
+                  child: RepaintBoundary(
+                    key: globalKey,
+                    child: Stack(
+                      children: [
+                        Image.file(
+                          File(widget.imageFile.path),
+                          fit: BoxFit.cover,
+                        ),
+                        CustomPaint(
+                          painter: LinePainter(
+                              lines: lines,
+                              startPoint: startPoint,
+                              endPoint: endPoint,
+                              matrix: matrix),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -245,12 +261,20 @@ class LinePainter extends CustomPainter {
   final List<List<Offset>> lines;
   final Offset startPoint;
   final Offset endPoint;
+  final Matrix4 matrix;
 
-  LinePainter(
-      {required this.lines, required this.startPoint, required this.endPoint});
+  LinePainter({
+    required this.lines,
+    required this.startPoint,
+    required this.endPoint,
+    required this.matrix,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.transform(matrix.storage);
+
     final paint = Paint()
       ..color = Colors.red
       ..strokeWidth = 2.0;
@@ -262,6 +286,8 @@ class LinePainter extends CustomPainter {
     if (startPoint != Offset(0, 0) && endPoint != Offset(0, 0)) {
       canvas.drawLine(startPoint, endPoint, paint);
     }
+
+    canvas.restore();
   }
 
   @override
