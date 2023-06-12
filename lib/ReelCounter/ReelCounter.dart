@@ -34,39 +34,34 @@ class _ReelCounterState extends State<ReelCounter> {
   String? selectedType;
 
   //Typical reel sizes and esimates on dimensions
+  //Taken from: https://www.vishay.com/docs/20014/smdpack.pdf
+  //and: https://www.onsemi.com/pub/collateral/brd8011-d.pdf
   void updateValuesForSelectedReelType(String? type) {
     setState(() {
+      internalHubDiameter = 60.0;
       if (type == '0402') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.5;
+        tapeThickness = 0.85;
         distanceBetweenComponents = 2.0;
       } else if (type == '0603') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.5;
+        tapeThickness = 0.9;
         distanceBetweenComponents = 4.0;
       } else if (type == '0805') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.5;
+        tapeThickness = 0.95;
         distanceBetweenComponents = 4.0;
       } else if (type == '1206') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.5;
+        tapeThickness = 1.1;
         distanceBetweenComponents = 4.0;
       } else if (type == '1210') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.5;
+        tapeThickness = 1.25;
         distanceBetweenComponents = 4.0;
-      } else if (type == '1812') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.6;
-        distanceBetweenComponents = 8.0;
+      } else if (type == '1218') {
+        tapeThickness = 1.15;
+        distanceBetweenComponents = 4.0;
       } else if (type == '2010') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.6;
-        distanceBetweenComponents = 8.0;
+        tapeThickness = 1.2;
+        distanceBetweenComponents = 4.0;
       } else if (type == '2512') {
-        internalHubDiameter = 60.0;
-        tapeThickness = 0.6;
+        tapeThickness = 1.2;
         distanceBetweenComponents = 8.0;
       }
     });
