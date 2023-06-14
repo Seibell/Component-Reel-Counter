@@ -70,6 +70,7 @@ class _CameraViewState extends State<CameraView> {
     super.dispose();
   }
 
+  // Reel size: Radius = 89mm => Diameter = 178mm | Center insert diameter = 14mm
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<void>(
@@ -83,17 +84,29 @@ class _CameraViewState extends State<CameraView> {
               ),
               Center(
                 child: Container(
-                  width: 35,
-                  height: 35,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: Colors.red,
-                      width: 2,
+                      width: 1,
                     ),
                   ),
                 ),
               ),
+              Center(
+                  child: Container(
+                width: 400,
+                height: 400,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.red,
+                    width: 1,
+                  ),
+                ),
+              )),
               Positioned(
                 bottom: 20,
                 right: 20,

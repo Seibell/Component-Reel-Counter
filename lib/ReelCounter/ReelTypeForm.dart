@@ -59,7 +59,7 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
   void _calculateReelEstimate() {
     //Use formula to calculate estimated reel count
 
-    double r = (widget.averageLineLengthInMM - internalHubDiameter) / 2;
+    double r = widget.averageLineLengthInMM - internalHubDiameter / 2;
     double h = internalHubDiameter;
     double m = tapeThickness;
 

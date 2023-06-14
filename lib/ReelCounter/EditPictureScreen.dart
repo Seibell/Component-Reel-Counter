@@ -55,12 +55,12 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     setInitialBoxCoordinates();
   }
 
-  void _showReelTypeForm(double averageBoxDiagonalLengthInRealLifeInMM,
-      Completer<void> completer) {
+  void _showReelTypeForm(
+      double averageBoxLengthInRealLifeInMM, Completer<void> completer) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return ReelTypeForm(averageBoxDiagonalLengthInRealLifeInMM, completer);
+        return ReelTypeForm(averageBoxLengthInRealLifeInMM, completer);
       },
     );
   }
@@ -68,8 +68,10 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
   double calculateAverageBoxLength() {
     final double length1 = (topLeft - topRight).distance;
     final double length2 = (topRight - bottomRight).distance;
+    final double length3 = (bottomRight - bottomLeft).distance;
+    final double length4 = (bottomLeft - topLeft).distance;
 
-    return (length1 + length2) / 2;
+    return (length1 + length2 + length3 + length4) / 4;
   }
 
   Future<void> _saveImage() async {
@@ -89,27 +91,23 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     // Write the image bytes to the file.
     await imgFile.writeAsBytes(pngBytes);
 
-    // Calculate the average box diagonal length in terms of the real-life diameter of the center circle
-    final averageBoxDiagonalLength = calculateAverageBoxLength();
-    final double realLifeDiameterCm =
-        1.3; // The real-life diameter of the center circle is 1.3 cm
-    final double diameterInPixels =
-        35.0; // The diameter of the circle on the screen is 35 pixels
+    final averageBoxLength = calculateAverageBoxLength();
+    final double realLifeDiameterCm = 1.5;
+    final double diameterInPixels = 40.0;
     final double scaleFactor = realLifeDiameterCm / diameterInPixels;
-    final averageBoxDiagonalLengthInRealLife = averageBoxDiagonalLength *
-        scaleFactor; // The average box diagonal length in cm
-    final averageBoxDiagonalLengthInRealLifeInMM =
-        averageBoxDiagonalLengthInRealLife * 10; // Convert from cm to mm
+    final averageBoxLengthInRealLife = averageBoxLength * scaleFactor;
+    final averageBoxLengthInRealLifeInMM = averageBoxLengthInRealLife * 10;
 
-    print(
-        "Average box diagonal length in MM: ${averageBoxDiagonalLengthInRealLifeInMM}");
+    print("Average box length in pixels: ${averageBoxLength}");
+    print("Device pixel ratio: ${MediaQuery.of(context).devicePixelRatio}");
+    print("Average box length in real life: ${averageBoxLengthInRealLife}");
+    print("Average box length in MM: ${averageBoxLengthInRealLifeInMM}");
 
     // Create a Completer that completes when the BottomSheet is closed
     Completer<void> bottomSheetCompleter = Completer();
 
     // Shows bottom sheet to ask user for reel type + show reel count result
-    _showReelTypeForm(
-        averageBoxDiagonalLengthInRealLifeInMM, bottomSheetCompleter);
+    _showReelTypeForm(averageBoxLengthInRealLifeInMM, bottomSheetCompleter);
 
     // Wait for the BottomSheet to be closed
     await bottomSheetCompleter.future;
