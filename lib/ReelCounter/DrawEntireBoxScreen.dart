@@ -2,28 +2,23 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:async';
+import 'package:component_reel_counter/ReelCounter/EditPictureScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
-import './DrawCircleAfterEditPictureScreen.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
-class EditPictureScreen extends StatefulWidget {
+class DrawEntireBoxScreen extends StatefulWidget {
   final XFile imageFile;
-  final double imageHeight;
-  final double imageWidth;
 
-  EditPictureScreen(
-      {required this.imageFile,
-      required this.imageHeight,
-      required this.imageWidth});
+  DrawEntireBoxScreen({required this.imageFile});
 
   @override
-  _EditPictureScreenState createState() => _EditPictureScreenState();
+  _DrawEntireBoxScreenState createState() => _DrawEntireBoxScreenState();
 }
 
-class _EditPictureScreenState extends State<EditPictureScreen> {
+class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
   GlobalKey globalKey = GlobalKey();
   Offset topLeft = Offset(0, 0);
   Offset topRight = Offset(0, 0);
@@ -70,17 +65,11 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     return (length1 + length2 + length3 + length4) / 4;
   }
 
-  Future<void> _sendImageToDrawCircle() async {
+  Future<void> _sendImageToSmallerBox() async {
     RenderRepaintBoundary boundary =
         globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     ui.Image image = await boundary.toImage();
     ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    // Compress the image with higher quality
-    Uint8List pngBytes = await FlutterImageCompress.compressWithList(
-      byteData!.buffer.asUint8List(),
-      quality: 100, // Use 100% quality for maximum preservation
-    );
 
     // Get the temporary directory path.
     final directory = await getTemporaryDirectory();
@@ -90,7 +79,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     File imgFile = File('$path/screenshot.png');
 
     // Write the image bytes to the file.
-    await imgFile.writeAsBytes(pngBytes);
+    await imgFile.writeAsBytes(byteData!.buffer.asUint8List());
 
     final averageBoxLength =
         calculateAverageBoxLength() * MediaQuery.of(context).devicePixelRatio;
@@ -98,11 +87,10 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DrawCircleAfterEditPictureScreen(
+        builder: (context) => EditPictureScreen(
           imageFile: XFile(imgFile.path),
-          imageWidth: widget.imageWidth,
-          imageHeight: widget.imageHeight,
-          averageBoxLength: averageBoxLength,
+          imageWidth: averageBoxLength,
+          imageHeight: averageBoxLength,
         ),
       ),
     );
@@ -121,7 +109,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.navigate_next),
-            onPressed: _sendImageToDrawCircle,
+            onPressed: _sendImageToSmallerBox,
             tooltip: 'Next Step (Draw Circle)',
           ),
         ],

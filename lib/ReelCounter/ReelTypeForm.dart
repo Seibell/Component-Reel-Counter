@@ -55,16 +55,16 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
     //Use proportion to estimate reel count
 
     //Calculate the length of the box in real life (mm) which is the estimated reel width
-    double reelWidthInMM = widget.averageLineLength / widget.scaleFactor;
+    double lineLengthInMM = widget.averageLineLength / widget.scaleFactor;
     double entireReelWidthInMM = widget.imageWidth / widget.scaleFactor;
     double entireReelHeightInMM = widget.imageHeight / widget.scaleFactor;
 
-    print("Reel Width In MM: $reelWidthInMM");
-    print("Entire Reel Width In MM: $entireReelWidthInMM");
-    print("Entire Reel Height In MM: $entireReelHeightInMM");
+    print("Line Length: ${widget.averageLineLength}");
+    print("Entire Reel Width: ${widget.imageWidth}");
+    print("Entire Reel Height: ${widget.imageHeight}");
 
     // Find area of component reel
-    double componentReelArea = pi * (reelWidthInMM / 2) * (reelWidthInMM / 2);
+    double componentReelArea = pi * (lineLengthInMM / 2) * (lineLengthInMM / 2);
 
     // Find area of inner reel (to be subtracted from component reel)
     double innerReelArea =
@@ -77,11 +77,14 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
         (averageEntireReelHeightWidth / 2) *
         (averageEntireReelHeightWidth / 2);
 
+    componentReelArea = componentReelArea - innerReelArea;
+    entireComponentReelArea = entireComponentReelArea - innerReelArea;
+
     // Find percentage of component reel area to entire reel area
     double percentageOfComponentReelArea =
-        (componentReelArea - innerReelArea) / entireComponentReelArea;
+        componentReelArea / entireComponentReelArea;
 
-    // Assume user inputs 1000 components on the reel (max value)
+    // User input
     int numberOfComponentsOnReel = componentsOnReel;
 
     // Find the number of components on the reel

@@ -104,7 +104,7 @@ class _DrawCircleScreenState extends State<DrawCircleAfterEditPictureScreen> {
     final double radius = calculateRadius();
     final double diameter = 2 * radius;
     // 14mm in real life - measured using a ruler
-    const circleDiameterInRealLife = 14;
+    const circleDiameterInRealLife = 60;
 
     final double scaleFactor = diameter / circleDiameterInRealLife;
 
