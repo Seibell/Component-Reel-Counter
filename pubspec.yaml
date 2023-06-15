@@ -48,6 +48,7 @@ dependencies:
   camera: ^0.10.5+2
   gallery_saver: ^2.3.2
   matrix_gesture_detector: ^0.2.0-nullsafety.1
+  flutter_image_compress: ^2.0.3
 
 dev_dependencies:
   flutter_test:

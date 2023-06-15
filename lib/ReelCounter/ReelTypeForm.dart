@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 class ReelTypeForm extends StatefulWidget {
-  final double averageLineLengthInMM;
+  final double averageLineLength;
+  final double scaleFactor;
+  final double imageWidth;
+  final double imageHeight;
   final Completer<void> completer;
 
-  ReelTypeForm(this.averageLineLengthInMM, this.completer);
+  ReelTypeForm(this.averageLineLength, this.scaleFactor, this.imageWidth,
+      this.imageHeight, this.completer);
 
   @override
   _ReelTypeFormState createState() => _ReelTypeFormState();
@@ -22,84 +26,82 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
   //Variables that should be fixed (selectable - based on reel type)
   //These values are in milimeteres (mm)
   double internalHubDiameter = 0.0;
-  double tapeThickness = 0.0;
-  double distanceBetweenComponents = 0.0;
+  int componentsOnReel = 0;
 
-  void updateValuesForSelectedReelType(String? type) {
+  void updateNumberOfComponentsOnReel(String? num) {
     setState(() {
       internalHubDiameter = 56.5;
-      if (type == '0402') {
-        tapeThickness = 0.85;
-        distanceBetweenComponents = 2.0;
-      } else if (type == '0603') {
-        tapeThickness = 0.9;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '0805') {
-        tapeThickness = 0.95;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '1206') {
-        tapeThickness = 1.1;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '1210') {
-        tapeThickness = 1.25;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '1218') {
-        tapeThickness = 1.15;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '2010') {
-        tapeThickness = 1.2;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '2512') {
-        tapeThickness = 1.2;
-        distanceBetweenComponents = 8.0;
+      if (num == '500') {
+        componentsOnReel = 500;
+      } else if (num == '1000') {
+        componentsOnReel = 1000;
+      } else if (num == '2000') {
+        componentsOnReel = 2000;
+      } else if (num == '3000') {
+        componentsOnReel = 3000;
+      } else if (num == '4000') {
+        componentsOnReel = 4000;
+      } else if (num == '5000') {
+        componentsOnReel = 5000;
+      } else if (num == '6000') {
+        componentsOnReel = 6000;
+      } else if (num == '10000') {
+        componentsOnReel = 10000;
       }
     });
   }
 
   void _calculateReelEstimate() {
-    //Use formula to calculate estimated reel count
+    //Use proportion to estimate reel count
 
-    double r = (widget.averageLineLengthInMM - internalHubDiameter) / 2;
-    double h = internalHubDiameter;
-    double m = tapeThickness;
+    //Calculate the length of the box in real life (mm) which is the estimated reel width
+    double lineLengthInMM = widget.averageLineLength / widget.scaleFactor;
+    double entireReelWidthInMM = widget.imageWidth / widget.scaleFactor;
+    double entireReelHeightInMM = widget.imageHeight / widget.scaleFactor;
 
-    /*
-    The outside diameter of the roll is the measured value of the hub,
-    plus twice the measured value R. Note that the measurement of R measures 
-    from the inside of the hub to the outside of the roll.
-    D=H+2R
-    */
-    double d = h + 2 * m;
+    print("Line Length: ${widget.averageLineLength}");
+    print("Entire Reel Width: ${widget.imageWidth}");
+    print("Entire Reel Height: ${widget.imageHeight}");
 
-    /*
-    The inside diameter of the roll is the external diameter of the hub.
-    This is the measured internal diameter of the hub, plus twice the material thickness.
-    d=H+2m
-    */
-    double bigD = h + 2 * r;
-    /*
-    First, the number of windings on the reel is calculated.
-    Each winding adds the thickness of the tape over the entire circumference of the reel,
-    and so the diameter increases by twice the thickness for each winding.
-    From the difference between the outer diameter and the inner diameter of the roll, and the tape thickness,
-    the number of windings is easily calculated.
-    W=(D−d)/2T
-    */
-    double windings = (bigD - d) / (2 * tapeThickness);
-    /*
-    The roll of tape on the reel is a spiral.
-    The length of the tape spiralled on the reel is the circumference of the average diameter,
-    multiplied by the number of windings.
-    L=D+d2⋅W⋅π
-    */
-    double length = (bigD + d) / 2 * windings * pi;
-    /*
-    Once the length of the tape is known, the number of components follows by dividing it by the pitch.
-    */
-    int estimatedComponents = (length / distanceBetweenComponents).round();
+    // Find area of component reel
+    double componentReelArea = pi * (lineLengthInMM / 2) * (lineLengthInMM / 2);
+
+    // Find area of inner reel (to be subtracted from component reel)
+    double innerReelArea =
+        pi * (internalHubDiameter / 2) * (internalHubDiameter / 2);
+
+    // Find area of entire reel (100%)
+    double averageEntireReelHeightWidth =
+        (entireReelHeightInMM + entireReelWidthInMM) / 2;
+    double entireComponentReelArea = pi *
+        (averageEntireReelHeightWidth / 2) *
+        (averageEntireReelHeightWidth / 2);
+
+    componentReelArea = componentReelArea - innerReelArea;
+    entireComponentReelArea = entireComponentReelArea - innerReelArea;
+
+    // Find percentage of component reel area to entire reel area
+    double percentageOfComponentReelArea =
+        componentReelArea / entireComponentReelArea;
+
+    // User input
+    int numberOfComponentsOnReel = componentsOnReel;
+
+    // Find the number of components on the reel
+    double numberOfComponentsOnReelEstimate =
+        numberOfComponentsOnReel * percentageOfComponentReelArea;
+
+    // Print all variables
+    print("Component Reel Area: $componentReelArea");
+    print("Inner Reel Area: $innerReelArea");
+    print("Entire Component Reel Area: $entireComponentReelArea");
+    print("Percentage of Component Reel Area: $percentageOfComponentReelArea");
+    print(
+        "Number of Components on Reel Estimate: $numberOfComponentsOnReelEstimate");
 
     setState(() {
-      _result = "Estimated components on reel: $estimatedComponents";
+      _result =
+          "Estimated components on reel: $numberOfComponentsOnReelEstimate";
     });
   }
 
@@ -114,14 +116,14 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
             DropdownButtonFormField<String>(
               value: reelType,
               items: <String>[
-                '0402',
-                '0603',
-                '0805',
-                '1206',
-                '1210',
-                '1218',
-                '2010',
-                '2510'
+                '500',
+                '1000',
+                '2000',
+                '3000',
+                '4000',
+                '5000',
+                '6000',
+                '10000'
               ].map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
@@ -145,7 +147,7 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
               child: Text(_result == null ? 'Submit' : 'OK'),
               onPressed: () {
                 if (_result == null) {
-                  updateValuesForSelectedReelType(reelType);
+                  updateNumberOfComponentsOnReel(reelType);
                   _calculateReelEstimate();
                 } else {
                   setState(() {
