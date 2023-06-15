@@ -1,6 +1,9 @@
+import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'EditPictureScreen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import './EditPictureScreen.dart';
 
 class CameraView extends StatefulWidget {
   @override
@@ -8,119 +11,97 @@ class CameraView extends StatefulWidget {
 }
 
 class _CameraViewState extends State<CameraView> {
-  late Future<void> _initializeControllerFuture;
+  File? _imageFile;
+  final picker = ImagePicker();
 
-  late CameraController controller;
+  Future<void> _takePictureAndEdit() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    if (pickedFile == null) return;
 
-  @override
-  void initState() {
-    super.initState();
-    initializeCamera();
-  }
+    final originalImageFile = File(pickedFile.path);
+    final croppedImageFile = await _cropImage(originalImageFile);
+    if (croppedImageFile == null) return;
 
-  Future<void> initializeCamera() async {
-    final cameras = await availableCameras();
-    controller = CameraController(cameras[0], ResolutionPreset.max);
-    _initializeControllerFuture = controller.initialize();
-    if (!mounted) {
-      return;
-    }
+    final imageSize = await getImageSize(croppedImageFile.path, context);
+    final double entireImageWidth = imageSize.width;
+    final double entireImageHeight = imageSize.height;
+
+    _imageFile = croppedImageFile;
     setState(() {});
+
+    // Pass the cropped image file to the EditPictureScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPictureScreen(
+            imageFile: XFile(croppedImageFile.path),
+            imageWidth: entireImageWidth,
+            imageHeight: entireImageHeight),
+      ),
+    );
   }
 
-  Future<XFile> takePicture() async {
-    if (!controller.value.isInitialized) {
-      print('Error: select a camera first.');
-      throw Exception('select a camera first.');
-    }
-
-    if (controller.value.isTakingPicture) {
-      print('Error: processing is in progress.');
-      throw Exception('processing is in progress.');
-    }
-
-    try {
-      XFile file = await controller.takePicture();
-      return file;
-    } on CameraException catch (e) {
-      print('Error: ${e.code}\nError Message: ${e.description}');
-      throw e;
-    }
-  }
-
-  Future<void> takePictureAndEdit() async {
-    try {
-      final imageFile = await takePicture();
-
-      // Navigate to a new screen, passing the picture file
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EditPictureScreen(imageFile: imageFile),
+  Future<File?> _cropImage(File originalImageFile) async {
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: originalImageFile.path,
+      aspectRatioPresets: Platform.isAndroid
+          ? [
+              CropAspectRatioPreset.square,
+              CropAspectRatioPreset.ratio3x2,
+              CropAspectRatioPreset.original,
+              CropAspectRatioPreset.ratio4x3,
+              CropAspectRatioPreset.ratio16x9
+            ]
+          : [
+              CropAspectRatioPreset.original,
+              CropAspectRatioPreset.square,
+              CropAspectRatioPreset.ratio3x2,
+              CropAspectRatioPreset.ratio4x3,
+              CropAspectRatioPreset.ratio5x3,
+              CropAspectRatioPreset.ratio5x4,
+              CropAspectRatioPreset.ratio7x5,
+              CropAspectRatioPreset.ratio16x9
+            ],
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Image',
+          toolbarColor: const Color.fromARGB(255, 8, 9, 10),
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
         ),
-      );
-    } catch (e) {
-      print(e);
-    }
+        IOSUiSettings(
+          title: 'Crop Image',
+        ),
+      ],
+    );
+
+    return croppedFile != null ? File(croppedFile.path) : null;
   }
 
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
+  Future<ui.Size> getImageSize(String path, BuildContext context) async {
+    final data = await File(path).readAsBytes();
+    final codec = await ui.instantiateImageCodec(data);
+    final frameInfo = await codec.getNextFrame();
+
+    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+
+    return Size(
+      frameInfo.image.width.toDouble() / devicePixelRatio,
+      frameInfo.image.height.toDouble() / devicePixelRatio,
+    );
   }
 
-  // Reel size: Radius = 89mm => Diameter = 178mm | Center insert diameter = 14mm
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: _initializeControllerFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: CameraPreview(controller),
-              ),
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.red,
-                      width: 1,
-                    ),
-                  ),
-                ),
-              ),
-              Center(
-                  child: Container(
-                width: 400,
-                height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.red,
-                    width: 1,
-                  ),
-                ),
-              )),
-              Positioned(
-                bottom: 20,
-                right: 20,
-                child: FloatingActionButton(
-                  onPressed: takePictureAndEdit,
-                  child: Icon(Icons.camera_alt),
-                ),
-              ),
-            ],
-          );
-        } else {
-          return Center(child: CircularProgressIndicator());
-        }
-      },
+    return Scaffold(
+      body: _imageFile != null
+          ? Image.file(_imageFile!)
+          : Center(child: Text('No Image Selected')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _takePictureAndEdit,
+        child: Icon(Icons.camera_alt),
+      ),
     );
   }
 }

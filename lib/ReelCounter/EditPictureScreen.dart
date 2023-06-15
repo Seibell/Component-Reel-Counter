@@ -7,13 +7,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
 import 'package:gallery_saver/gallery_saver.dart';
-import 'dart:math';
 import './ReelTypeForm.dart';
+import './DrawCircleAfterEditPictureScreen.dart';
 
 class EditPictureScreen extends StatefulWidget {
   final XFile imageFile;
+  final double imageWidth;
+  final double imageHeight;
 
-  EditPictureScreen({required this.imageFile});
+  EditPictureScreen(
+      {required this.imageFile,
+      required this.imageWidth,
+      required this.imageHeight});
 
   @override
   _EditPictureScreenState createState() => _EditPictureScreenState();
@@ -55,16 +60,6 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     setInitialBoxCoordinates();
   }
 
-  void _showReelTypeForm(
-      double averageBoxLengthInRealLifeInMM, Completer<void> completer) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return ReelTypeForm(averageBoxLengthInRealLifeInMM, completer);
-      },
-    );
-  }
-
   double calculateAverageBoxLength() {
     final double length1 = (topLeft - topRight).distance;
     final double length2 = (topRight - bottomRight).distance;
@@ -74,7 +69,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     return (length1 + length2 + length3 + length4) / 4;
   }
 
-  Future<void> _saveImage() async {
+  Future<void> _sendImageToDrawCircle() async {
     RenderRepaintBoundary boundary =
         globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     ui.Image image = await boundary.toImage();
@@ -92,46 +87,18 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     await imgFile.writeAsBytes(pngBytes);
 
     final averageBoxLength = calculateAverageBoxLength();
-    final double realLifeDiameterCm = 1.5;
-    final double diameterInPixels = 40.0;
-    final double scaleFactor = realLifeDiameterCm / diameterInPixels;
-    final averageBoxLengthInRealLife = averageBoxLength * scaleFactor;
-    final averageBoxLengthInRealLifeInMM = averageBoxLengthInRealLife * 10;
 
-    print("Average box length in pixels: ${averageBoxLength}");
-    print("Device pixel ratio: ${MediaQuery.of(context).devicePixelRatio}");
-    print("Average box length in real life: ${averageBoxLengthInRealLife}");
-    print("Average box length in MM: ${averageBoxLengthInRealLifeInMM}");
-
-    // Create a Completer that completes when the BottomSheet is closed
-    Completer<void> bottomSheetCompleter = Completer();
-
-    // Shows bottom sheet to ask user for reel type + show reel count result
-    _showReelTypeForm(averageBoxLengthInRealLifeInMM, bottomSheetCompleter);
-
-    // Wait for the BottomSheet to be closed
-    await bottomSheetCompleter.future;
-
-    // Save the image to the gallery using gallery_saver
-    GallerySaver.saveImage(imgFile.path, albumName: 'MyApp')
-        .then((bool? success) {
-      print("Saved the image as ${imgFile.path}");
-
-      if (success!) {
-        Navigator.of(context).pop(); // Go back to the camera view
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image saved successfully!'),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save image.'),
-          ),
-        );
-      }
-    });
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DrawCircleAfterEditPictureScreen(
+          imageFile: XFile(imgFile.path),
+          imageWidth: widget.imageWidth,
+          imageHeight: widget.imageHeight,
+          averageBoxLength: averageBoxLength,
+        ),
+      ),
+    );
   }
 
   @override
@@ -146,9 +113,9 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
             tooltip: 'Reset Box',
           ),
           IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveImage,
-            tooltip: 'Save Image',
+            icon: const Icon(Icons.navigate_next),
+            onPressed: _sendImageToDrawCircle,
+            tooltip: 'Next Step (Draw Circle)',
           ),
         ],
       ),
