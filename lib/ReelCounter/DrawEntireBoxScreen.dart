@@ -1,12 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'dart:async';
 import 'package:component_reel_counter/ReelCounter/EditPictureScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class DrawEntireBoxScreen extends StatefulWidget {
@@ -60,7 +56,7 @@ class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
     final double length3 = (bottomRight - bottomLeft).distance;
     final double length4 = (bottomLeft - topLeft).distance;
 
-    print("Average Box length in DrawEntireBoxScreen is $length1");
+    print("******* Average Box length in DrawEntireBoxScreen is $length1");
 
     return (length1 + length2 + length3 + length4) / 4;
   }

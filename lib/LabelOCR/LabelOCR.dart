@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 import 'database_helper.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'dart:isolate';
+import 'text_bucketing.dart';
 
 class LabelOCR extends StatefulWidget {
   @override
@@ -141,11 +142,16 @@ class _LabelOCRState extends State<LabelOCR> {
         final inputImage = InputImage.fromFilePath(processedImageFile.path);
 
         final textRecognizer = GoogleMlKit.vision.textRecognizer();
-        final RecognizedText recognizedText =
+        RecognizedText recognizedText =
             await textRecognizer.processImage(inputImage);
 
-        _extractedTextNotifier.value = recognizedText.text;
-        _textEditingController.text = recognizedText.text;
+        // Process text into buckets
+        TextBucketing textBucketing = TextBucketing();
+        String processedText =
+            textBucketing.processExtractedText(recognizedText.toString());
+
+        _extractedTextNotifier.value = processedText;
+        _textEditingController.text = processedText;
 
         textRecognizer.close();
       }
@@ -198,31 +204,31 @@ class _LabelOCRState extends State<LabelOCR> {
                         ElevatedButton(
                           onPressed: () =>
                               _readTextFromImage(ImageSource.camera),
-                          child: const Padding(
-                            padding: EdgeInsets.all(15.0),
-                            child: const Text('Capture Image'),
-                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(32.0),
                             ),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(15.0),
+                            child: const Text('Capture Image'),
                           ),
                         ),
                         ElevatedButton(
                           onPressed: () =>
                               _readTextFromImage(ImageSource.gallery),
-                          child: const Padding(
-                            padding: EdgeInsets.all(15.0),
-                            child: const Text('Upload Image'),
-                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(32.0),
                             ),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(15.0),
+                            child: Text('Upload Image'),
                           ),
                         ),
                       ],
