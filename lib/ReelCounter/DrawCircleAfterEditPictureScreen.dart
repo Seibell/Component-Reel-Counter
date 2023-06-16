@@ -78,52 +78,40 @@ class _DrawCircleScreenState extends State<DrawCircleAfterEditPictureScreen> {
   }
 
   double calculateRadius() {
-    // Assuming that 'center' is the center of the circle
-    // and 'topLeft' is a point on the boundary of the circle
-    return (center - topLeft).distance;
+    // Calculate the width and height of the bounding box
+    double boxWidth = topRight.dx - topLeft.dx;
+    double boxHeight = bottomLeft.dy - topLeft.dy;
+
+    // The radius of the circle is half the average of the width and height
+    return (boxWidth + boxHeight) / 4;
   }
 
   Future<void> _saveImage() async {
-    RenderRepaintBoundary boundary =
-        globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    ui.Image image = await boundary.toImage();
-    ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    Uint8List pngBytes = byteData!.buffer.asUint8List();
-
-    // Get the temporary directory path.
-    final directory = await getTemporaryDirectory();
-    final path = directory.path;
-
-    // Create a file at the path.
-    File imgFile = File('$path/screenshot.png');
-
-    // Write the image bytes to the file.
-    await imgFile.writeAsBytes(pngBytes);
-
-    //Calculations
+    // Calculations
     final double radius = calculateRadius();
     final double diameter = 2 * radius;
-    // 14mm in real life - measured using a ruler
-    const circleDiameterInRealLife = 60;
+    // in real life - measured using a ruler
+    const circleDiameterInRealLife = 59;
 
     final double scaleFactor = diameter / circleDiameterInRealLife;
 
-    double averageBoxLength = widget.averageBoxLength;
+    print("Diameter = $diameter");
+    print("Scale Factor = $scaleFactor");
 
     // Create a Completer that completes when the BottomSheet is closed
     Completer<void> bottomSheetCompleter = Completer();
 
     // Shows bottom sheet to ask user for reel type + show reel count result
-    _showReelTypeForm(averageBoxLength, scaleFactor, widget.imageWidth,
+    _showReelTypeForm(widget.averageBoxLength, scaleFactor, widget.imageWidth,
         widget.imageHeight, bottomSheetCompleter);
 
     // Wait for the BottomSheet to be closed
     await bottomSheetCompleter.future;
 
     // Save the image to the gallery using gallery_saver
-    GallerySaver.saveImage(imgFile.path, albumName: 'MyApp')
+    GallerySaver.saveImage(widget.imageFile.path, albumName: 'MyApp')
         .then((bool? success) {
-      print("Saved the image as ${imgFile.path}");
+      print("Saved the image as ${widget.imageFile.path}");
 
       if (success!) {
         Navigator.of(context).pop(); // Go back to the camera view
@@ -231,7 +219,7 @@ class _DrawCircleScreenState extends State<DrawCircleAfterEditPictureScreen> {
               key: globalKey,
               child: Image.file(
                 File(widget.imageFile.path),
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 width: double.infinity,
                 height: double.infinity,
               ),

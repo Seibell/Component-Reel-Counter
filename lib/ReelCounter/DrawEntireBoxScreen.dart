@@ -60,35 +60,19 @@ class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
     final double length3 = (bottomRight - bottomLeft).distance;
     final double length4 = (bottomLeft - topLeft).distance;
 
-    print("Average Box length in EditPictureSceren is $length1");
+    print("Average Box length in DrawEntireBoxScreen is $length1");
 
     return (length1 + length2 + length3 + length4) / 4;
   }
 
   Future<void> _sendImageToSmallerBox() async {
-    RenderRepaintBoundary boundary =
-        globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    ui.Image image = await boundary.toImage();
-    ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    // Get the temporary directory path.
-    final directory = await getTemporaryDirectory();
-    final path = directory.path;
-
-    // Create a file at the path.
-    File imgFile = File('$path/screenshot.png');
-
-    // Write the image bytes to the file.
-    await imgFile.writeAsBytes(byteData!.buffer.asUint8List());
-
-    final averageBoxLength =
-        calculateAverageBoxLength() * MediaQuery.of(context).devicePixelRatio;
+    final averageBoxLength = calculateAverageBoxLength();
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditPictureScreen(
-          imageFile: XFile(imgFile.path),
+          imageFile: XFile(widget.imageFile.path),
           imageWidth: averageBoxLength,
           imageHeight: averageBoxLength,
         ),
