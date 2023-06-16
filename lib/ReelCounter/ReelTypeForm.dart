@@ -63,6 +63,10 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
     print("Entire Reel Width: ${widget.imageWidth}");
     print("Entire Reel Height: ${widget.imageHeight}");
 
+    print("Line Length in MM: $lineLengthInMM");
+    print("Entire Reel Width in MM: $entireReelWidthInMM");
+    print("Entire Reel Height in MM: $entireReelHeightInMM");
+
     // Find area of component reel
     double componentReelArea = pi * (lineLengthInMM / 2) * (lineLengthInMM / 2);
 
