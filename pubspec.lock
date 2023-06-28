@@ -216,6 +216,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  fuzzywuzzy:
+    dependency: "direct main"
+    description:
+      name: fuzzywuzzy
+      sha256: "6eaf32a2a28c76b085cfe4d87c139ec221fe67b35dcba942d60add28c7bcd174"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.6"
   gallery_saver:
     dependency: "direct main"
     description:

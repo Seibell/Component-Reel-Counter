@@ -147,11 +147,11 @@ class _LabelOCRState extends State<LabelOCR> {
 
         // Process text into buckets
         TextBucketing textBucketing = TextBucketing();
-        String processedText =
-            textBucketing.processExtractedText(recognizedText.toString());
+        String t =
+            textBucketing.processExtractedText(recognizedText.text.toString());
 
-        _extractedTextNotifier.value = processedText;
-        _textEditingController.text = processedText;
+        _extractedTextNotifier.value = t;
+        _textEditingController.text = t;
 
         textRecognizer.close();
       }
