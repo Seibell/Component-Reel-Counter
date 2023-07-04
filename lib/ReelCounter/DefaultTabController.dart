@@ -20,8 +20,8 @@ class DefaultTab extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            ReelCounter(), // Existing Page
-            CameraView(), // New Camera Page
+            ReelCounter(),
+            CameraView(),
           ],
         ),
       ),

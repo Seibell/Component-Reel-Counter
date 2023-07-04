@@ -130,7 +130,7 @@ class _DrawCircleScreenState extends State<DrawCircleAfterEditPictureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mark out inner reel'),
+        title: Text('Box inner reel'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.restore),

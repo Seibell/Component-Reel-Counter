@@ -7,65 +7,18 @@ class ReelCounter extends StatefulWidget {
 }
 
 class _ReelCounterState extends State<ReelCounter> {
-  //New variables that need to be set by user
-  //This value is in milimeters (mm)
+  // Values are in milimeters (mm)
   final TextEditingController widthOfRollController = TextEditingController();
+  final TextEditingController internalHubDiameterController =
+      TextEditingController();
+  final TextEditingController hubMaterialThickness = TextEditingController();
+  final TextEditingController tapeThicknessController = TextEditingController();
+  final TextEditingController componentPitchController =
+      TextEditingController();
+
   final FocusNode _focusNode = FocusNode();
 
-  //Variables that should be fixed (selectable - based on reel type)
-  //These values are in milimeteres (mm)
-  double internalHubDiameter = 0.0;
-  double tapeThickness = 0.0;
-  double distanceBetweenComponents = 0.0;
-
   String _result = '';
-
-  //Add dropdown items list to select reel type
-  List<String> _reelType = [
-    '0402',
-    '0603',
-    '0805',
-    '1206',
-    '1210',
-    '1812',
-    '2010',
-    '2512'
-  ];
-  String? selectedType;
-
-  //Typical reel sizes and esimates on dimensions
-  //Taken from: https://www.vishay.com/docs/20014/smdpack.pdf
-  //and: https://www.onsemi.com/pub/collateral/brd8011-d.pdf
-  void updateValuesForSelectedReelType(String? type) {
-    setState(() {
-      internalHubDiameter = 60.0;
-      if (type == '0402') {
-        tapeThickness = 0.85;
-        distanceBetweenComponents = 2.0;
-      } else if (type == '0603') {
-        tapeThickness = 0.9;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '0805') {
-        tapeThickness = 0.85;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '1206') {
-        tapeThickness = 1.1;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '1210') {
-        tapeThickness = 1.25;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '1218') {
-        tapeThickness = 1.15;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '2010') {
-        tapeThickness = 1.2;
-        distanceBetweenComponents = 4.0;
-      } else if (type == '2512') {
-        tapeThickness = 1.2;
-        distanceBetweenComponents = 8.0;
-      }
-    });
-  }
 
   void _calculateReelEstimate() {
     if (widthOfRollController.text.isEmpty) {
@@ -74,9 +27,11 @@ class _ReelCounterState extends State<ReelCounter> {
 
     //Use formula to calculate estimated reel count
 
-    double r = double.parse(widthOfRollController.text);
-    double h = internalHubDiameter;
-    double m = tapeThickness;
+    double R = double.parse(widthOfRollController.text);
+    double H = double.parse(internalHubDiameterController.text);
+    double m = double.parse(hubMaterialThickness.text);
+    double T = double.parse(tapeThicknessController.text);
+    double pitch = double.parse(componentPitchController.text);
 
     /*
     The outside diameter of the roll is the measured value of the hub,
@@ -84,14 +39,14 @@ class _ReelCounterState extends State<ReelCounter> {
     from the inside of the hub to the outside of the roll.
     D=H+2R
     */
-    double d = h + 2 * m;
+    double D = H + 2 * R;
 
     /*
     The inside diameter of the roll is the external diameter of the hub.
     This is the measured internal diameter of the hub, plus twice the material thickness.
     d=H+2m
     */
-    double bigD = h + 2 * r;
+    double d = H + 2 * m;
     /*
     First, the number of windings on the reel is calculated.
     Each winding adds the thickness of the tape over the entire circumference of the reel,
@@ -100,18 +55,18 @@ class _ReelCounterState extends State<ReelCounter> {
     the number of windings is easily calculated.
     W=(D−d)/2T
     */
-    double windings = (bigD - d) / (2 * tapeThickness);
+    double windings = (D - d) / (2 * T);
     /*
     The roll of tape on the reel is a spiral.
     The length of the tape spiralled on the reel is the circumference of the average diameter,
     multiplied by the number of windings.
     L=D+d2⋅W⋅π
     */
-    double length = (bigD + d) / 2 * windings * pi;
+    double length = (D + d) / 2 * windings * pi;
     /*
     Once the length of the tape is known, the number of components follows by dividing it by the pitch.
     */
-    int estimatedComponents = (length / distanceBetweenComponents).round();
+    int estimatedComponents = (length / pitch).round();
 
     setState(() {
       _result = "Estimated components on reel: $estimatedComponents";
@@ -129,45 +84,59 @@ class _ReelCounterState extends State<ReelCounter> {
         },
         child: Scaffold(
           body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextField(
-                    controller: widthOfRollController,
-                    focusNode: _focusNode,
-                    keyboardType: TextInputType.number,
-                    decoration:
-                        const InputDecoration(labelText: 'Width of Roll (mm)'),
-                  ),
-                  DropdownButton<String>(
-                    hint: const Text('Select Reel Type'),
-                    value: selectedType,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        selectedType = newValue;
-                      });
-                      updateValuesForSelectedReelType(newValue);
-                    },
-                    items:
-                        _reelType.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  ElevatedButton(
-                    onPressed: _calculateReelEstimate,
-                    child: const Text('Calculate Reel Estimate'),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    _result,
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ],
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextField(
+                      controller: widthOfRollController,
+                      focusNode: _focusNode,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Width of Roll, R (mm)'),
+                    ),
+                    TextField(
+                      controller: internalHubDiameterController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Internal Hub Diameter, H (mm)'),
+                    ),
+                    TextField(
+                      controller: hubMaterialThickness,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Hub Material Thickness, m (mm)'),
+                    ),
+                    TextField(
+                      controller: tapeThicknessController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Tape Thickness, T (mm)'),
+                    ),
+                    TextField(
+                      controller: componentPitchController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Distance Between Components, Pitch (mm)'),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _calculateReelEstimate,
+                      child: const Text('Calculate Reel Estimate'),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      _result,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Image.asset('images/Reference_Reel.png'),
+                    )
+                  ],
+                ),
               ),
             ),
           ),

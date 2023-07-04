@@ -80,7 +80,7 @@ class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mark out entire reel'),
+        title: Text('Box entire reel'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.restore),
@@ -90,7 +90,7 @@ class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
           IconButton(
             icon: const Icon(Icons.navigate_next),
             onPressed: _sendImageToSmallerBox,
-            tooltip: 'Next Step (Draw Circle)',
+            tooltip: 'Next Step',
           ),
         ],
       ),

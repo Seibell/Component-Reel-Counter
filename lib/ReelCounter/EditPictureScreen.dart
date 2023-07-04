@@ -86,7 +86,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mark out remaining reel'),
+        title: Text('Box remaining reel'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.restore),
@@ -96,7 +96,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           IconButton(
             icon: const Icon(Icons.navigate_next),
             onPressed: _sendImageToDrawCircle,
-            tooltip: 'Next Step (Draw Circle)',
+            tooltip: 'Next Step',
           ),
         ],
       ),
