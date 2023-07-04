@@ -50,6 +50,7 @@ dependencies:
   matrix_gesture_detector: ^0.2.0-nullsafety.1
   flutter_image_compress: ^2.0.3
   fuzzywuzzy: 0.1.6
+  url_launcher: ^6.1.11
 
 dev_dependencies:
   flutter_test:

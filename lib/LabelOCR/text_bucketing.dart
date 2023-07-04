@@ -15,6 +15,7 @@ class TextBucketing {
         "Vendor PN",
         "P/N",
         "PN",
+        "PIN",
         "Product Number",
         "Vendor P/N",
         "SAP PN",

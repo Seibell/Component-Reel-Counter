@@ -5,6 +5,7 @@ import 'package:intl/intl.dart'; // for date and time formatting
 import 'package:flutter/services.dart'; // for clipboard service
 import 'package:http/http.dart' as http; // for making http requests
 import 'dart:convert'; // for converting http response
+import 'package:url_launcher/url_launcher.dart';
 
 // StatefulWidget as it maintains mutable state
 class SearchScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchData(); // call the function to fetch data
+    _fetchData();
   }
 
   // Function to fetch data from the database
@@ -52,7 +53,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // Function to fetch the next page of data
   void _fetchNextPage() async {
     List<Map<String, dynamic>> nextPageData = await DatabaseHelper.instance
         .queryAllRows(page: page + 1, rowsPerPage: rowsPerPage);
@@ -65,12 +65,11 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // Function to fetch the previous page of data
   void _fetchPreviousPage() {
     if (page > 0) {
       setState(() {
-        page--; // decrement the page number
-        _fetchData(); // fetch the data for the previous page
+        page--;
+        _fetchData();
       });
     }
   }
@@ -98,6 +97,65 @@ class _SearchScreenState extends State<SearchScreen> {
       _fetchData();
       _selectedItems.clear();
     });
+  }
+
+  void _searchProductOnWeb(BuildContext context) async {
+    if (_selectedItems.length != 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select exactly one item to search"),
+        ),
+      );
+      return;
+    }
+
+    String vendorProductNumber = '';
+    String customerProductNumber = '';
+
+    // Extract the vendor and customer product numbers from the selected item
+    String selectedItemText = _selectedItems.values.first;
+    RegExp vendorProductNumberRegex = RegExp(r"Vendor Product Number: (.+)");
+    RegExp customerProductNumberRegex =
+        RegExp(r"Customer Product Number: (.+)");
+
+    // Find the vendor product number using regex
+    Match? vendorMatch = vendorProductNumberRegex.firstMatch(selectedItemText);
+    if (vendorMatch != null) {
+      vendorProductNumber = vendorMatch.group(1)!;
+    }
+
+    // Find the customer product number using regex
+    Match? customerMatch =
+        customerProductNumberRegex.firstMatch(selectedItemText);
+    if (customerMatch != null) {
+      customerProductNumber = customerMatch.group(1)!;
+    }
+
+    // Tiebreak by length, sometimes customer product number is the one we want which can be differentiated by length
+    if (vendorProductNumber.isNotEmpty && customerProductNumber.isNotEmpty) {
+      if (customerProductNumber.length > 1.5 * vendorProductNumber.length) {
+        Uri url =
+            Uri.parse('https://www.google.com/search?q=$customerProductNumber');
+        launchUrl(url);
+        return;
+      }
+    }
+
+    if (vendorProductNumber.isNotEmpty) {
+      Uri url =
+          Uri.parse('https://www.google.com/search?q=$vendorProductNumber');
+      launchUrl(url);
+    } else if (customerProductNumber.isNotEmpty) {
+      Uri url =
+          Uri.parse('https://www.google.com/search?q=$customerProductNumber');
+      launchUrl(url);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Product numbers not found"),
+        ),
+      );
+    }
   }
 
   // Function to share selected items via http request
@@ -132,7 +190,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // Build the widget tree for this screen
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -144,7 +201,7 @@ class _SearchScreenState extends State<SearchScreen> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Search OCR Text'),
+            title: const Text('Database'),
             actions: <Widget>[
               IconButton(
                 onPressed: () {
@@ -162,6 +219,12 @@ class _SearchScreenState extends State<SearchScreen> {
               IconButton(
                 onPressed: _copySelectedItems,
                 icon: const Icon(Icons.copy),
+              ),
+              IconButton(
+                onPressed: () {
+                  _searchProductOnWeb(context);
+                },
+                icon: const Icon(Icons.public),
               ),
               IconButton(
                 onPressed: _shareSelectedItems,
