@@ -1,6 +1,5 @@
 // import necessary dependencies
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import '../LabelOCR/database_helper.dart'; // our local database helper class
 import 'package:intl/intl.dart'; // for date and time formatting
 import 'package:flutter/services.dart'; // for clipboard service

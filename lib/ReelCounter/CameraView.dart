@@ -1,10 +1,7 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:component_reel_counter/ReelCounter/DrawEntireBoxScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
-import './EditPictureScreen.dart';
 
 class CameraView extends StatefulWidget {
   @override
