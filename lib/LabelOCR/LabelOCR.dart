@@ -154,6 +154,7 @@ class _LabelOCRState extends State<LabelOCR> {
         _textEditingController.text = t;
 
         textRecognizer.close();
+        _isSaved = false;
       }
     }
 

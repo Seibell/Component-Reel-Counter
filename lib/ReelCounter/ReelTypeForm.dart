@@ -21,6 +21,14 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
   String? _result;
 
   final FocusNode _focusNode = FocusNode();
+  TextEditingController _componentsController = TextEditingController();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _componentsController.dispose();
+    super.dispose();
+  }
 
   //Variables that should be fixed (selectable - based on reel type)
   //These values are in milimeteres (mm)
@@ -30,23 +38,6 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
   void updateNumberOfComponentsOnReel(String? num) {
     setState(() {
       internalHubDiameter = 56.5;
-      if (num == '500') {
-        componentsOnReel = 500;
-      } else if (num == '1000') {
-        componentsOnReel = 1000;
-      } else if (num == '2000') {
-        componentsOnReel = 2000;
-      } else if (num == '3000') {
-        componentsOnReel = 3000;
-      } else if (num == '4000') {
-        componentsOnReel = 4000;
-      } else if (num == '5000') {
-        componentsOnReel = 5000;
-      } else if (num == '6000') {
-        componentsOnReel = 6000;
-      } else if (num == '10000') {
-        componentsOnReel = 10000;
-      }
     });
   }
 
@@ -88,7 +79,8 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
         componentReelArea / entireComponentReelArea;
 
     // User input
-    int numberOfComponentsOnReel = componentsOnReel;
+    int numberOfComponentsOnReel =
+        int.tryParse(_componentsController.text) ?? 0;
 
     // Find the number of components on the reel
     double numberOfComponentsOnReelEstimate =
@@ -116,46 +108,21 @@ class _ReelTypeFormState extends State<ReelTypeForm> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            DropdownButtonFormField<String>(
-              value: reelType,
-              items: <String>[
-                '500',
-                '1000',
-                '2000',
-                '3000',
-                '4000',
-                '5000',
-                '6000',
-                '10000'
-              ].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  reelType = newValue;
-                  if (_result != null) {
-                    _result =
-                        null; // Reset the result if it's not the same as the current reelType
-                  }
-                });
-              },
+            TextFormField(
+              controller: _componentsController,
+              keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Reel Type',
+                labelText: 'Components on Reel',
               ),
             ),
             ElevatedButton(
               child: Text(_result == null ? 'Submit' : 'OK'),
               onPressed: () {
                 if (_result == null) {
-                  updateNumberOfComponentsOnReel(reelType);
                   _calculateReelEstimate();
                 } else {
                   setState(() {
-                    _result =
-                        null; // Reset the result after the 'OK' button is pressed
+                    _result = null;
                   });
                   widget.completer.complete();
                 }

@@ -21,10 +21,14 @@ class EditPictureScreen extends StatefulWidget {
 
 class _EditPictureScreenState extends State<EditPictureScreen> {
   GlobalKey globalKey = GlobalKey();
+  Offset boxCenter = Offset(0, 0);
+  Offset previousTouchPoint = Offset(0, 0);
   Offset topLeft = Offset(0, 0);
   Offset topRight = Offset(0, 0);
   Offset bottomLeft = Offset(0, 0);
   Offset bottomRight = Offset(0, 0);
+
+  bool isMoving = false;
 
   @override
   void initState() {
@@ -53,6 +57,39 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
 
   void resetBoxCoordinates() {
     setInitialBoxCoordinates();
+  }
+
+  Offset calculateBoxCenter() {
+    final double centerX =
+        (topLeft.dx + topRight.dx + bottomLeft.dx + bottomRight.dx) / 4;
+    final double centerY =
+        (topLeft.dy + topRight.dy + bottomLeft.dy + bottomRight.dy) / 4;
+
+    return Offset(centerX, centerY);
+  }
+
+  void translateBox(Offset translation) {
+    setState(() {
+      topLeft += translation;
+      topRight += translation;
+      bottomLeft += translation;
+      bottomRight += translation;
+    });
+  }
+
+  void adjustRectangleToSquare() {
+    final double width = topRight.dx - topLeft.dx;
+    final double height = bottomLeft.dy - topLeft.dy;
+
+    if (width != height) {
+      final double minLength = width < height ? width : height;
+
+      setState(() {
+        topRight = Offset(topLeft.dx + minLength, topLeft.dy);
+        bottomLeft = Offset(topLeft.dx, topLeft.dy + minLength);
+        bottomRight = Offset(topRight.dx, bottomLeft.dy);
+      });
+    }
   }
 
   double calculateAverageBoxLength() {
@@ -105,29 +142,36 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           final touchPoint = details.localPosition;
           final double touchTolerance = 20.0;
 
+          boxCenter = calculateBoxCenter();
+
+          if ((boxCenter - touchPoint).distance <= 1.69 * touchTolerance) {
+            isMoving = true;
+          }
+          previousTouchPoint = touchPoint;
+
           if ((topLeft - touchPoint).distance <= touchTolerance) {
             setState(() {
               topLeft = touchPoint;
-              topRight = Offset(topRight.dx, touchPoint.dy);
-              bottomLeft = Offset(touchPoint.dx, bottomLeft.dy);
+              topRight = Offset(topRight.dx, topLeft.dy);
+              bottomLeft = Offset(topLeft.dx, bottomLeft.dy);
             });
           } else if ((topRight - touchPoint).distance <= touchTolerance) {
             setState(() {
               topRight = touchPoint;
-              topLeft = Offset(topLeft.dx, touchPoint.dy);
-              bottomRight = Offset(touchPoint.dx, bottomRight.dy);
+              topLeft = Offset(topLeft.dx, topRight.dy);
+              bottomRight = Offset(topRight.dx, bottomRight.dy);
             });
           } else if ((bottomLeft - touchPoint).distance <= touchTolerance) {
             setState(() {
               bottomLeft = touchPoint;
-              topLeft = Offset(touchPoint.dx, topLeft.dy);
-              bottomRight = Offset(bottomRight.dx, touchPoint.dy);
+              topLeft = Offset(bottomLeft.dx, topLeft.dy);
+              bottomRight = Offset(bottomRight.dx, bottomLeft.dy);
             });
           } else if ((bottomRight - touchPoint).distance <= touchTolerance) {
             setState(() {
               bottomRight = touchPoint;
-              topRight = Offset(touchPoint.dx, topRight.dy);
-              bottomLeft = Offset(bottomLeft.dx, touchPoint.dy);
+              topRight = Offset(bottomRight.dx, topRight.dy);
+              bottomLeft = Offset(bottomLeft.dx, bottomRight.dy);
             });
           }
         },
@@ -135,31 +179,44 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           final touchPoint = details.localPosition;
           final double touchTolerance = 20.0;
 
+          if (isMoving) {
+            translateBox(touchPoint - previousTouchPoint);
+          }
+
+          previousTouchPoint = touchPoint;
+
           if ((topLeft - touchPoint).distance <= touchTolerance) {
             setState(() {
               topLeft = touchPoint;
-              topRight = Offset(topRight.dx, touchPoint.dy);
-              bottomLeft = Offset(touchPoint.dx, bottomLeft.dy);
+              topRight = Offset(topRight.dx, topLeft.dy);
+              bottomLeft = Offset(topLeft.dx, bottomLeft.dy);
+              adjustRectangleToSquare(); // Check and adjust to square
             });
           } else if ((topRight - touchPoint).distance <= touchTolerance) {
             setState(() {
               topRight = touchPoint;
-              topLeft = Offset(topLeft.dx, touchPoint.dy);
-              bottomRight = Offset(touchPoint.dx, bottomRight.dy);
+              topLeft = Offset(topLeft.dx, topRight.dy);
+              bottomRight = Offset(topRight.dx, bottomRight.dy);
+              adjustRectangleToSquare(); // Check and adjust to square
             });
           } else if ((bottomLeft - touchPoint).distance <= touchTolerance) {
             setState(() {
               bottomLeft = touchPoint;
-              topLeft = Offset(touchPoint.dx, topLeft.dy);
-              bottomRight = Offset(bottomRight.dx, touchPoint.dy);
+              topLeft = Offset(bottomLeft.dx, topLeft.dy);
+              bottomRight = Offset(bottomRight.dx, bottomLeft.dy);
+              adjustRectangleToSquare(); // Check and adjust to square
             });
           } else if ((bottomRight - touchPoint).distance <= touchTolerance) {
             setState(() {
               bottomRight = touchPoint;
-              topRight = Offset(touchPoint.dx, topRight.dy);
-              bottomLeft = Offset(bottomLeft.dx, touchPoint.dy);
+              topRight = Offset(bottomRight.dx, topRight.dy);
+              bottomLeft = Offset(bottomLeft.dx, bottomRight.dy);
+              adjustRectangleToSquare(); // Check and adjust to square
             });
           }
+        },
+        onPanEnd: (details) {
+          isMoving = false;
         },
         child: Stack(
           children: [
