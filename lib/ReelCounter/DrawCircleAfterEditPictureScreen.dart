@@ -65,7 +65,7 @@ class _DrawCircleScreenState extends State<DrawCircleAfterEditPictureScreen> {
   void _showReelTypeForm(double averageBoxLength, double scaleFactor,
       double imageWidth, double imageHeight, Completer<void> completer) {
     showModalBottomSheet(
-      isScrollControlled: true, // Enable scrolling within the bottom sheet
+      isScrollControlled: true,
       context: context,
       builder: (BuildContext context) {
         return SingleChildScrollView(

@@ -17,12 +17,12 @@ class DrawEntireBoxScreen extends StatefulWidget {
 
 class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
   GlobalKey globalKey = GlobalKey();
-  Offset boxCenter = Offset(0, 0);
-  Offset previousTouchPoint = Offset(0, 0);
-  Offset topLeft = Offset(0, 0);
-  Offset topRight = Offset(0, 0);
-  Offset bottomLeft = Offset(0, 0);
-  Offset bottomRight = Offset(0, 0);
+  Offset boxCenter = const Offset(0, 0);
+  Offset previousTouchPoint = const Offset(0, 0);
+  Offset topLeft = const Offset(0, 0);
+  Offset topRight = const Offset(0, 0);
+  Offset bottomLeft = const Offset(0, 0);
+  Offset bottomRight = const Offset(0, 0);
 
   bool isMoving = false;
 
@@ -118,7 +118,7 @@ class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Box entire reel'),
+        title: const Text('Box entire reel'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.restore),
@@ -135,80 +135,99 @@ class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
       body: GestureDetector(
         onPanDown: (details) {
           final touchPoint = details.localPosition;
-          final double touchTolerance = 20.0;
-
+          const double touchTolerance = 40.0;
           boxCenter = calculateBoxCenter();
 
-          if ((boxCenter - touchPoint).distance <= 1.69 * touchTolerance) {
+          if ((boxCenter - touchPoint).distance <= touchTolerance) {
             isMoving = true;
+          } else {
+            if ((bottomRight - touchPoint).distance <= touchTolerance) {
+              isMoving = false;
+            }
           }
           previousTouchPoint = touchPoint;
-
-          if ((topLeft - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              topLeft = touchPoint;
-              topRight = Offset(topRight.dx, topLeft.dy);
-              bottomLeft = Offset(topLeft.dx, bottomLeft.dy);
-            });
-          } else if ((topRight - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              topRight = touchPoint;
-              topLeft = Offset(topLeft.dx, topRight.dy);
-              bottomRight = Offset(topRight.dx, bottomRight.dy);
-            });
-          } else if ((bottomLeft - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              bottomLeft = touchPoint;
-              topLeft = Offset(bottomLeft.dx, topLeft.dy);
-              bottomRight = Offset(bottomRight.dx, bottomLeft.dy);
-            });
-          } else if ((bottomRight - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              bottomRight = touchPoint;
-              topRight = Offset(bottomRight.dx, topRight.dy);
-              bottomLeft = Offset(bottomLeft.dx, bottomRight.dy);
-            });
-          }
         },
         onPanUpdate: (details) {
           final touchPoint = details.localPosition;
-          final double touchTolerance = 20.0;
+          const double touchTolerance = 60.0;
 
           if (isMoving) {
-            translateBox(touchPoint - previousTouchPoint);
-          }
+            final translation = touchPoint - previousTouchPoint;
 
+            // Prevent the box from moving out of screen bounds
+            final screenSize = MediaQuery.of(context).size;
+            if (topLeft.dx + translation.dx >= 0 &&
+                topRight.dx + translation.dx <= screenSize.width &&
+                topLeft.dy + translation.dy >= 0 &&
+                bottomLeft.dy + translation.dy <= screenSize.height) {
+              translateBox(translation);
+            }
+          } else {
+            Offset? newCorner;
+            Offset? oppositeCorner;
+            if ((topLeft - previousTouchPoint).distance <= touchTolerance) {
+              newCorner = Offset(touchPoint.dx.clamp(0, bottomRight.dx),
+                  touchPoint.dy.clamp(0, bottomRight.dy));
+              oppositeCorner = bottomRight;
+            } else if ((topRight - previousTouchPoint).distance <=
+                touchTolerance) {
+              newCorner = Offset(
+                  touchPoint.dx
+                      .clamp(topLeft.dx, MediaQuery.of(context).size.width),
+                  touchPoint.dy.clamp(0, bottomLeft.dy));
+              oppositeCorner = bottomLeft;
+            } else if ((bottomLeft - previousTouchPoint).distance <=
+                touchTolerance) {
+              newCorner = Offset(
+                  touchPoint.dx.clamp(0, topRight.dx),
+                  touchPoint.dy
+                      .clamp(topRight.dy, MediaQuery.of(context).size.height));
+              oppositeCorner = topRight;
+            } else if ((bottomRight - previousTouchPoint).distance <=
+                touchTolerance) {
+              newCorner = Offset(
+                  touchPoint.dx
+                      .clamp(bottomLeft.dx, MediaQuery.of(context).size.width),
+                  touchPoint.dy
+                      .clamp(topLeft.dy, MediaQuery.of(context).size.height));
+              oppositeCorner = topLeft;
+            }
+
+            final newLength = min((newCorner!.dx - oppositeCorner!.dx).abs(),
+                (newCorner.dy - oppositeCorner.dy).abs());
+
+            setState(() {
+              if ((topLeft - previousTouchPoint).distance <= touchTolerance) {
+                topLeft = Offset(oppositeCorner!.dx - newLength,
+                    oppositeCorner.dy - newLength);
+                topRight = Offset(oppositeCorner.dx, topLeft.dy);
+                bottomLeft = Offset(topLeft.dx, oppositeCorner.dy);
+                bottomRight = oppositeCorner;
+              } else if ((topRight - previousTouchPoint).distance <=
+                  touchTolerance) {
+                topRight = Offset(oppositeCorner!.dx + newLength,
+                    oppositeCorner.dy - newLength);
+                topLeft = Offset(oppositeCorner.dx, topRight.dy);
+                bottomRight = Offset(topRight.dx, oppositeCorner.dy);
+                bottomLeft = oppositeCorner;
+              } else if ((bottomLeft - previousTouchPoint).distance <=
+                  touchTolerance) {
+                bottomLeft = Offset(oppositeCorner!.dx - newLength,
+                    oppositeCorner.dy + newLength);
+                topLeft = Offset(bottomLeft.dx, oppositeCorner.dy);
+                bottomRight = Offset(oppositeCorner.dx, bottomLeft.dy);
+                topRight = oppositeCorner;
+              } else if ((bottomRight - previousTouchPoint).distance <=
+                  touchTolerance) {
+                bottomRight = Offset(oppositeCorner!.dx + newLength,
+                    oppositeCorner.dy + newLength);
+                topRight = Offset(bottomRight.dx, oppositeCorner.dy);
+                bottomLeft = Offset(oppositeCorner.dx, bottomRight.dy);
+                topLeft = oppositeCorner;
+              }
+            });
+          }
           previousTouchPoint = touchPoint;
-
-          if ((topLeft - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              topLeft = touchPoint;
-              topRight = Offset(topRight.dx, topLeft.dy);
-              bottomLeft = Offset(topLeft.dx, bottomLeft.dy);
-              adjustRectangleToSquare(); // Check and adjust to square
-            });
-          } else if ((topRight - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              topRight = touchPoint;
-              topLeft = Offset(topLeft.dx, topRight.dy);
-              bottomRight = Offset(topRight.dx, bottomRight.dy);
-              adjustRectangleToSquare(); // Check and adjust to square
-            });
-          } else if ((bottomLeft - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              bottomLeft = touchPoint;
-              topLeft = Offset(bottomLeft.dx, topLeft.dy);
-              bottomRight = Offset(bottomRight.dx, bottomLeft.dy);
-              adjustRectangleToSquare(); // Check and adjust to square
-            });
-          } else if ((bottomRight - touchPoint).distance <= touchTolerance) {
-            setState(() {
-              bottomRight = touchPoint;
-              topRight = Offset(bottomRight.dx, topRight.dy);
-              bottomLeft = Offset(bottomLeft.dx, bottomRight.dy);
-              adjustRectangleToSquare(); // Check and adjust to square
-            });
-          }
         },
         onPanEnd: (details) {
           isMoving = false;
