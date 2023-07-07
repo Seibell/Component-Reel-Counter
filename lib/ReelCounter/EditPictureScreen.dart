@@ -199,8 +199,11 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
               oppositeCorner = topLeft;
             }
 
-            final newLength = min((newCorner!.dx - oppositeCorner!.dx).abs(),
-                (newCorner.dy - oppositeCorner.dy).abs());
+            const minLength = 45.0; // Minimum box side length for min reel
+            final newLength = max(
+                minLength,
+                min((newCorner!.dx - oppositeCorner!.dx).abs(),
+                    (newCorner.dy - oppositeCorner.dy).abs()));
 
             setState(() {
               if ((topLeft - previousTouchPoint).distance <= touchTolerance) {
