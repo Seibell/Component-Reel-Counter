@@ -6,6 +6,10 @@ import 'package:flutter/services.dart'; // for clipboard service
 import 'package:http/http.dart' as http; // for making http requests
 import 'dart:convert'; // for converting http response
 import 'package:url_launcher/url_launcher.dart';
+import 'package:excel/excel.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:share/share.dart';
 
 // StatefulWidget as it maintains mutable state
 class SearchScreen extends StatefulWidget {
@@ -17,8 +21,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   late Future<List<Map<String, dynamic>>>
       _data; // Future list that will store the data
-  Map<int, String> _selectedItems =
-      {}; // Map to store the selected items from the list
+  Map<int, String> _selectedItems = {};
 
   // Variables for pagination
   int page = 0;
@@ -158,6 +161,58 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  void _exportToExcel() async {
+    // Fetch all data from the database
+    var allData = await DatabaseHelper.instance.queryAllRows();
+
+    var excel = Excel.createExcel();
+    var sheet = excel.sheets.values.first;
+    var headers = ["Id", "Timestamp", "Text"];
+    for (var i = 0; i < headers.length; i++) {
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+          .value = headers[i];
+    }
+
+    for (var i = 0; i < allData.length; i++) {
+      var itemId = i + 1;
+      var timestamp = allData[i]['timestamp'];
+      var itemText = allData[i]['text'];
+
+      // Write the item id, timestamp, and text to the sheet
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
+          .value = itemId;
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
+          .value = timestamp;
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
+          .value = itemText;
+    }
+
+    // Save the Excel file
+    var data = excel.encode();
+
+    // Get the temporary directory
+    final directory = (await getTemporaryDirectory()).path;
+
+    // Create a file in the obtained directory
+    final file = File('$directory/label_data.xlsx');
+    await file.writeAsBytes(data!);
+
+    // Share the file
+    Share.shareFiles([
+      file.path
+    ], mimeTypes: [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ]);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Items exported to Excel successfully")),
+    );
+  }
+
   // Function to share selected items via http request
   void _shareSelectedItems() async {
     // Join the selected items into a single string
@@ -226,9 +281,46 @@ class _SearchScreenState extends State<SearchScreen> {
                 },
                 icon: const Icon(Icons.public),
               ),
-              IconButton(
-                onPressed: _shareSelectedItems,
+              PopupMenuButton<int>(
                 icon: const Icon(Icons.share),
+                onSelected: (value) {
+                  switch (value) {
+                    case 0:
+                      _shareSelectedItems();
+                      break;
+                    case 1:
+                      _exportToExcel();
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 0,
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.send,
+                          color: Colors.blue,
+                        ),
+                        SizedBox(width: 8.0),
+                        Text('Export Telegram')
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 1,
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.file_download,
+                          color: Colors.blue,
+                        ),
+                        SizedBox(width: 8.0),
+                        Text('Export Excel')
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -288,7 +380,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   row[DatabaseHelper.columnTimestamp]))),
                               DataCell(
                                 ConstrainedBox(
-                                  constraints: BoxConstraints(maxHeight: 100),
+                                  constraints:
+                                      const BoxConstraints(maxHeight: 100),
                                   child: InkWell(
                                     onTap: () {
                                       Clipboard.setData(
@@ -317,7 +410,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
                         return DataTable(
                           columnSpacing: 15,
-                          columns: [
+                          columns: const [
                             DataColumn(label: Text('Select')),
                             DataColumn(label: Text('Timestamp')),
                             DataColumn(label: Text('Text')),
@@ -334,12 +427,12 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   IconButton(
                     onPressed: _fetchPreviousPage,
-                    icon: Icon(Icons.arrow_back),
+                    icon: const Icon(Icons.arrow_back),
                   ),
                   Text('Page ${page + 1}'),
                   IconButton(
                     onPressed: _fetchNextPage,
-                    icon: Icon(Icons.arrow_forward),
+                    icon: const Icon(Icons.arrow_forward),
                   ),
                 ],
               ),

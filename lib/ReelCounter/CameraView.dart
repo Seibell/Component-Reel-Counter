@@ -12,6 +12,11 @@ class _CameraViewState extends State<CameraView> {
   File? _imageFile;
   final picker = ImagePicker();
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _takePictureAndEdit() async {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
     if (pickedFile == null) return;

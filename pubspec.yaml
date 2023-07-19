@@ -51,6 +51,9 @@ dependencies:
   flutter_image_compress: ^2.0.3
   fuzzywuzzy: 0.1.6
   url_launcher: ^6.1.11
+  excel: ^2.1.0
+  permission_handler: ^10.4.3
+  share: ^2.0.4
 
 dev_dependencies:
   flutter_test:
