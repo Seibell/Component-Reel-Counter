@@ -102,6 +102,12 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  void _joinTelegram() async {
+    String telegramLink = "https://t.me/testingdbnotif";
+    Uri url = Uri.parse(telegramLink);
+    launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
   void _searchProductOnWeb(BuildContext context) async {
     if (_selectedItems.length != 1) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -291,6 +297,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     case 1:
                       _exportToExcel();
                       break;
+                    case 2:
+                      _joinTelegram();
+                      break;
                   }
                 },
                 itemBuilder: (context) => [
@@ -317,6 +326,19 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         SizedBox(width: 8.0),
                         Text('Export Excel')
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 2,
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.send,
+                          color: Colors.blue,
+                        ),
+                        SizedBox(width: 8.0),
+                        Text('Join Telegram')
                       ],
                     ),
                   ),
