@@ -53,7 +53,7 @@ class _SelectReelTypeFormState extends State<SelectReelTypeForm> {
       ];
     } else if (selectedType == "Diode") {
       _reelDimensions = [
-        'SOT123',
+        'SOT23',
         'SOT323',
         'MELF',
       ];
@@ -251,10 +251,11 @@ class _SelectReelTypeFormState extends State<SelectReelTypeForm> {
                     hint: const Text('Select Reel Type'),
                     value: selectedType,
                     onChanged: (String? newValue) {
-                      setState(() {
-                        selectedType = newValue;
-                      });
+                      selectedType = newValue;
+                      selectedDimension = null;
                       setReelDimensions();
+                      updateValuesForSelectedReelType(selectedType);
+                      setState(() {});
                     },
                     items:
                         _reelType.map<DropdownMenuItem<String>>((String value) {
@@ -269,10 +270,13 @@ class _SelectReelTypeFormState extends State<SelectReelTypeForm> {
                     hint: const Text('Select Reel Dimension'),
                     value: selectedDimension,
                     onChanged: (String? newValue) {
-                      setState(() {
+                      if (_reelDimensions.contains(newValue)) {
                         selectedDimension = newValue;
-                      });
+                      } else {
+                        selectedDimension = null;
+                      }
                       updateValuesForSelectedReelType(selectedType);
+                      setState(() {});
                     },
                     items: _reelDimensions
                         .map<DropdownMenuItem<String>>((String value) {
