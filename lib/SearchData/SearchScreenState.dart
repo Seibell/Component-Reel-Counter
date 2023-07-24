@@ -173,7 +173,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
     var excel = Excel.createExcel();
     var sheet = excel.sheets.values.first;
-    var headers = ["Id", "Timestamp", "Text"];
+    var headers = [
+      "Id",
+      "Timestamp",
+      "Vendor Product Number",
+      "Customer Product Number",
+      "Quantity",
+      "Description",
+      "Uncategorized"
+    ];
     for (var i = 0; i < headers.length; i++) {
       sheet
           .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
@@ -183,9 +191,28 @@ class _SearchScreenState extends State<SearchScreen> {
     for (var i = 0; i < allData.length; i++) {
       var itemId = i + 1;
       var timestamp = allData[i]['timestamp'];
-      var itemText = allData[i]['text'];
+      var text = allData[i]['text'];
 
-      // Write the item id, timestamp, and text to the sheet
+      // Split the text field into its individual parts
+      var vendorProductNumber = text
+          .split("Vendor Product Number:")
+          .last
+          .split("Customer Product Number:")
+          .first
+          .trim();
+      var customerProductNumber = text
+          .split("Customer Product Number:")
+          .last
+          .split("Quantity:")
+          .first
+          .trim();
+      var quantity =
+          text.split("Quantity:").last.split("Description:").first.trim();
+      var description =
+          text.split("Description:").last.split("Uncategorized:").first.trim();
+      var uncategorized = text.split("Uncategorized:").last.trim();
+
+      // Write the item id, timestamp, and text parts to the sheet
       sheet
           .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
           .value = itemId;
@@ -194,7 +221,19 @@ class _SearchScreenState extends State<SearchScreen> {
           .value = timestamp;
       sheet
           .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
-          .value = itemText;
+          .value = vendorProductNumber;
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1))
+          .value = customerProductNumber;
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1))
+          .value = quantity;
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1))
+          .value = description;
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: i + 1))
+          .value = uncategorized;
     }
 
     // Save the Excel file

@@ -61,7 +61,11 @@ class TextBucketing {
       ]
     };
 
-    Map<String, List<String>> results = {"Uncategorized": []};
+    // Initialize results with empty lists for each target category
+    Map<String, List<String>> results = {for (var key in targets.keys) key: []};
+
+    List<String> uncategorized = [];
+
     bool categorized;
 
     // Iterate over the tokens
@@ -81,9 +85,6 @@ class TextBucketing {
                 fuzzy.extractOne(query: variation, choices: [token]);
 
             if (closestMatch.score >= 70) {
-              if (!results.containsKey(target)) {
-                results[target] = [];
-              }
               results[target]!.add(nextToken);
               categorized = true;
               i++; // Skip the next token, as we've already categorized it
@@ -106,9 +107,6 @@ class TextBucketing {
                 fuzzy.extractOne(query: variation, choices: [token]);
 
             if (closestMatch.score >= 70) {
-              if (!results.containsKey(target)) {
-                results[target] = [];
-              }
               results[target]!.add(token.replaceFirst(variation, '').trim());
               categorized = true;
               break;
@@ -121,14 +119,10 @@ class TextBucketing {
         }
 
         if (!categorized) {
-          results["Uncategorized"]!.add(token);
+          uncategorized.add(token);
         }
       }
     }
-
-    // Get the "Uncategorized" entry and remove it from the map
-    var uncategorized = results["Uncategorized"];
-    results.remove("Uncategorized");
 
     // Format the categorized results into a single string
     String formattedResults = results.entries.map((entry) {
@@ -137,8 +131,8 @@ class TextBucketing {
       return '$category: ${tokens.join(", ")}';
     }).join("\n");
 
-    // Add the "Uncategorized" entry so it appears at the end
-    formattedResults += "\nUncategorized: ${uncategorized?.join(", ")}";
+    // Add the "Uncategorized" entries so they appear at the end
+    formattedResults += "\nUncategorized: ${uncategorized.join(", ")}";
 
     return formattedResults;
   }
