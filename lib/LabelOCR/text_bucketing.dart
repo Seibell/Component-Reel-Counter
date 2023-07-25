@@ -3,6 +3,16 @@ import 'package:fuzzywuzzy/model/extracted_result.dart';
 
 class TextBucketing {
   String processExtractedText(String recognizedText) {
+    bool isValidProductNumber(String token) {
+      int count = token.runes.where((rune) {
+        var character = String.fromCharCode(rune);
+        return character.toUpperCase() == character ||
+            character.contains(RegExp(r'\d'));
+      }).length;
+
+      return count / token.length >= 0.7;
+    }
+
     // Split the recognized text by line
     List<String> tokens = recognizedText.split('\n');
 
@@ -85,6 +95,12 @@ class TextBucketing {
                 fuzzy.extractOne(query: variation, choices: [token]);
 
             if (closestMatch.score >= 70) {
+              if (target == 'Vendor Product Number' ||
+                  target == 'Customer Product Number') {
+                if (!isValidProductNumber(nextToken)) {
+                  break;
+                }
+              }
               results[target]!.add(nextToken);
               categorized = true;
               i++; // Skip the next token, as we've already categorized it
@@ -107,6 +123,13 @@ class TextBucketing {
                 fuzzy.extractOne(query: variation, choices: [token]);
 
             if (closestMatch.score >= 70) {
+              if (target == 'Vendor Product Number' ||
+                  target == 'Customer Product Number') {
+                if (!isValidProductNumber(
+                    token.replaceFirst(variation, '').trim())) {
+                  break;
+                }
+              }
               results[target]!.add(token.replaceFirst(variation, '').trim());
               categorized = true;
               break;
