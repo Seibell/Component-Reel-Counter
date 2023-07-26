@@ -21,7 +21,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   late Future<List<Map<String, dynamic>>>
       _data; // Future list that will store the data
-  Map<int, String> _selectedItems = {};
+  Map<int, Map<String, dynamic>> _selectedItems = {};
 
   // Variables for pagination
   int page = 0;
@@ -80,7 +80,7 @@ class _SearchScreenState extends State<SearchScreen> {
   // Function to copy selected items to the clipboard
   void _copySelectedItems() {
     String copiedData = _selectedItems.entries
-        .map((item) => item.value)
+        .map((item) => item.value['text'])
         .join("\n === Next Item === \n");
 
     Clipboard.setData(ClipboardData(
@@ -122,7 +122,7 @@ class _SearchScreenState extends State<SearchScreen> {
     String customerProductNumber = '';
 
     // Extract the vendor and customer product numbers from the selected item
-    String selectedItemText = _selectedItems.values.first;
+    String selectedItemText = _selectedItems.values.first['text'];
     RegExp vendorProductNumberRegex = RegExp(r"Vendor Product Number: (.+)");
     RegExp customerProductNumberRegex =
         RegExp(r"Customer Product Number: (.+)");
@@ -167,9 +167,11 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  void _exportToExcel() async {
+  void _exportToExcel({bool exportSelected = false}) async {
     // Fetch all data from the database
-    var allData = await DatabaseHelper.instance.queryAllRows();
+    var allData = exportSelected
+        ? _selectedItems.values.toList()
+        : await DatabaseHelper.instance.queryAllData();
 
     var excel = Excel.createExcel();
     var sheet = excel.sheets.values.first;
@@ -262,7 +264,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _shareSelectedItems() async {
     // Join the selected items into a single string
     String copiedData = _selectedItems.entries
-        .map((item) => "\n \n=== Next Item === \n${item.value}")
+        .map((item) => "\n \n=== Next Item === \n${item.value['text']}")
         .join('');
 
     // Create a single key-value pair for the JSON
@@ -333,9 +335,6 @@ class _SearchScreenState extends State<SearchScreen> {
                     case 0:
                       _shareSelectedItems();
                       break;
-                    case 1:
-                      _exportToExcel();
-                      break;
                     case 2:
                       _joinTelegram();
                       break;
@@ -355,16 +354,38 @@ class _SearchScreenState extends State<SearchScreen> {
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 1,
-                    child: Row(
-                      children: <Widget>[
-                        Icon(
-                          Icons.file_download,
-                          color: Colors.blue,
+                    child: PopupMenuButton<int>(
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            Icons.file_download,
+                            color: Colors.blue,
+                          ),
+                          SizedBox(width: 8.0),
+                          Text('Export Excel')
+                        ],
+                      ),
+                      onSelected: (value) {
+                        switch (value) {
+                          case 0:
+                            _exportToExcel(exportSelected: false);
+                            break;
+                          case 1:
+                            _exportToExcel(exportSelected: true);
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 0,
+                          child: Text('Export All Rows'),
                         ),
-                        SizedBox(width: 8.0),
-                        Text('Export Excel')
+                        const PopupMenuItem(
+                          value: 1,
+                          child: Text('Export Selected Rows'),
+                        ),
                       ],
                     ),
                   ),
@@ -430,7 +451,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 onChanged: (value) {
                                   setState(() {
                                     if (value!) {
-                                      _selectedItems[itemId] = itemText;
+                                      _selectedItems[itemId] = row;
                                     } else {
                                       _selectedItems.remove(itemId);
                                     }

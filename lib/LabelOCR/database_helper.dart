@@ -50,6 +50,7 @@ class DatabaseHelper {
     );
   }
 
+  // Get rows for a single page
   Future<List<Map<String, dynamic>>> queryAllRows(
       {int page = 0, int rowsPerPage = 9, String searchQuery = ''}) async {
     Database db = await instance.database;
@@ -63,6 +64,18 @@ class DatabaseHelper {
 
     //To be removed (for testing purposes only)
     print('Fetched rows: $rows');
+
+    return rows;
+  }
+
+  Future<List<Map<String, dynamic>>> queryAllData(
+      {String searchQuery = ''}) async {
+    Database db = await instance.database;
+
+    List<Map<String, dynamic>> rows = await db.query(_tableName,
+        orderBy: '$columnTimestamp DESC',
+        where: '$columnText LIKE ?',
+        whereArgs: ['%$searchQuery%']);
 
     return rows;
   }
