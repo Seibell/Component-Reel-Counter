@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:component_reel_counter/ReelCounter/DrawEntireBoxScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:camera/camera.dart';
 
 class CameraView extends StatefulWidget {
   @override
@@ -11,35 +10,33 @@ class CameraView extends StatefulWidget {
 
 class _CameraViewState extends State<CameraView> {
   File? _imageFile;
-  final picker = ImagePicker();
+  List<CameraDescription>? cameras;
+  CameraController? controller;
 
   @override
-  void dispose() {
-    super.dispose();
+  void initState() {
+    super.initState();
+    initializeCamera();
+  }
+
+  Future<void> initializeCamera() async {
+    cameras = await availableCameras();
+    controller = CameraController(cameras![0], ResolutionPreset.medium);
+    await controller!.initialize();
   }
 
   Future<void> _takePictureAndEdit() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-    if (pickedFile == null) return;
-
-    final originalImageFile = File(pickedFile.path);
-    if (originalImageFile == null) return;
-
-    // Convert the image to JPEG
-    final jpgBytes = await FlutterImageCompress.compressWithFile(
-      originalImageFile.absolute.path,
-      format: CompressFormat.jpeg,
-    );
-
-    if (jpgBytes == null) {
-      print('Image compression failed');
+    if (!controller!.value.isInitialized) {
       return;
     }
+    final XFile? photo = await controller!.takePicture();
 
-    final jpgImage = File(originalImageFile.path.replaceFirst('.heic', '.jpg'));
-    await jpgImage.writeAsBytes(jpgBytes);
+    if (photo == null) return;
 
-    _imageFile = jpgImage;
+    final originalImageFile = File(photo.path);
+    if (originalImageFile == null) return;
+
+    _imageFile = originalImageFile;
     setState(() {});
 
     // Pass the cropped image file to the EditPictureScreen
@@ -47,14 +44,24 @@ class _CameraViewState extends State<CameraView> {
       context,
       MaterialPageRoute(
         builder: (context) => DrawEntireBoxScreen(
-          imageFile: XFile(jpgImage.path),
+          imageFile: XFile(originalImageFile.path),
         ),
       ),
     );
   }
 
   @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (controller == null || !controller!.value.isInitialized) {
+      return Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
       body: _imageFile != null
           ? Image.file(_imageFile!)
