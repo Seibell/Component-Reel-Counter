@@ -53,8 +53,8 @@ class _SelectReelTypeFormState extends State<SelectReelTypeForm> {
       ];
     } else if (selectedType == "Diode") {
       _reelDimensions = [
-        'SOT23',
-        'SOT323',
+        'SOD123',
+        'SOD323',
         'MELF',
       ];
     } else {
@@ -90,11 +90,11 @@ class _SelectReelTypeFormState extends State<SelectReelTypeForm> {
               distanceBetweenComponents = 4.0;
               break;
             case '0805':
-              tapeThickness = 0.85;
+              tapeThickness = 1.2; //0.85;
               distanceBetweenComponents = 4.0;
               break;
             case '1206':
-              tapeThickness = 0.85;
+              tapeThickness = 1.2; //0.85;
               distanceBetweenComponents = 4.0;
               break;
             case '1210':

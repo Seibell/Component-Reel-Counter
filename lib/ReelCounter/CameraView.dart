@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:component_reel_counter/ReelCounter/DrawEntireBoxScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class CameraView extends StatefulWidget {
   @override
@@ -24,7 +25,21 @@ class _CameraViewState extends State<CameraView> {
     final originalImageFile = File(pickedFile.path);
     if (originalImageFile == null) return;
 
-    _imageFile = originalImageFile;
+    // Convert the image to JPEG
+    final jpgBytes = await FlutterImageCompress.compressWithFile(
+      originalImageFile.absolute.path,
+      format: CompressFormat.jpeg,
+    );
+
+    if (jpgBytes == null) {
+      print('Image compression failed');
+      return;
+    }
+
+    final jpgImage = File(originalImageFile.path.replaceFirst('.heic', '.jpg'));
+    await jpgImage.writeAsBytes(jpgBytes);
+
+    _imageFile = jpgImage;
     setState(() {});
 
     // Pass the cropped image file to the EditPictureScreen
@@ -32,7 +47,7 @@ class _CameraViewState extends State<CameraView> {
       context,
       MaterialPageRoute(
         builder: (context) => DrawEntireBoxScreen(
-          imageFile: XFile(originalImageFile.path),
+          imageFile: XFile(jpgImage.path),
         ),
       ),
     );
