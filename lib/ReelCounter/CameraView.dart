@@ -63,16 +63,18 @@ class _CameraViewState extends State<CameraView> {
       future: _initializeCameraFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
+          // If the Future is complete, display the preview.
           return Scaffold(
             body: _imageFile != null
                 ? Image.file(_imageFile!)
-                : Center(child: Text('No Image Selected')),
+                : CameraPreview(controller!), // This line is changed
             floatingActionButton: FloatingActionButton(
               onPressed: _takePictureAndEdit,
               child: Icon(Icons.camera_alt),
             ),
           );
         } else {
+          // Otherwise, display a loading indicator.
           return Center(child: CircularProgressIndicator());
         }
       },
