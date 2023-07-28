@@ -12,11 +12,12 @@ class _CameraViewState extends State<CameraView> {
   File? _imageFile;
   List<CameraDescription>? cameras;
   CameraController? controller;
+  Future<void>? _initializeCameraFuture;
 
   @override
   void initState() {
     super.initState();
-    initializeCamera();
+    _initializeCameraFuture = initializeCamera();
   }
 
   Future<void> initializeCamera() async {
@@ -58,18 +59,23 @@ class _CameraViewState extends State<CameraView> {
 
   @override
   Widget build(BuildContext context) {
-    if (controller == null || !controller!.value.isInitialized) {
-      return Center(child: CircularProgressIndicator());
-    }
-
-    return Scaffold(
-      body: _imageFile != null
-          ? Image.file(_imageFile!)
-          : Center(child: Text('No Image Selected')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _takePictureAndEdit,
-        child: Icon(Icons.camera_alt),
-      ),
+    return FutureBuilder<void>(
+      future: _initializeCameraFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return Scaffold(
+            body: _imageFile != null
+                ? Image.file(_imageFile!)
+                : Center(child: Text('No Image Selected')),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _takePictureAndEdit,
+              child: Icon(Icons.camera_alt),
+            ),
+          );
+        } else {
+          return Center(child: CircularProgressIndicator());
+        }
+      },
     );
   }
 }
