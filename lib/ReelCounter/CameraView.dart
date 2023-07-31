@@ -22,7 +22,7 @@ class _CameraViewState extends State<CameraView> {
 
   Future<void> initializeCamera() async {
     cameras = await availableCameras();
-    controller = CameraController(cameras![0], ResolutionPreset.medium);
+    controller = CameraController(cameras![0], ResolutionPreset.ultraHigh);
     await controller!.initialize();
   }
 

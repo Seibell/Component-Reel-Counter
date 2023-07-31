@@ -2,9 +2,10 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import './DrawCircleAfterEditPictureScreen.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:math';
+import 'package:gallery_saver/gallery_saver.dart';
+import './ReelTypeForm.dart';
 
 class EditPictureScreen extends StatefulWidget {
   final XFile imageFile;
@@ -104,19 +105,62 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     return (length1 + length2 + length3 + length4) / 4;
   }
 
-  Future<void> _sendImageToDrawCircle() async {
-    final averageBoxLength = calculateAverageBoxLength();
+  Future<void> _saveImage() async {
+    // Create a Completer that completes when the BottomSheet is closed
+    Completer<void> bottomSheetCompleter = Completer();
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DrawCircleAfterEditPictureScreen(
-          imageFile: XFile(widget.imageFile.path),
-          imageWidth: widget.imageWidth,
-          imageHeight: widget.imageHeight,
-          averageBoxLength: averageBoxLength,
-        ),
-      ),
+    // Shows bottom sheet to ask user for reel type + show reel count result
+    _showReelTypeForm(calculateAverageBoxLength(), 1.0, widget.imageWidth,
+        widget.imageHeight, bottomSheetCompleter);
+
+    // Wait for the BottomSheet to be closed
+    await bottomSheetCompleter.future;
+
+    // Save the image to the gallery using gallery_saver
+    GallerySaver.saveImage(widget.imageFile.path, albumName: 'MyApp')
+        .then((bool? success) {
+      print("Saved the image as ${widget.imageFile.path}");
+
+      if (success!) {
+        Navigator.of(context).pop(); // Go back to the camera view
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image saved successfully!'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save image.'),
+          ),
+        );
+      }
+    });
+  }
+
+  void _showReelTypeForm(double averageBoxLength, double scaleFactor,
+      double imageWidth, double imageHeight, Completer<void> completer) {
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context)
+                  .viewInsets
+                  .bottom, // Adjust for keyboard
+            ),
+            child: ReelTypeForm(
+              averageBoxLength,
+              1.0,
+              imageWidth,
+              imageHeight,
+              completer,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -133,7 +177,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.navigate_next),
-            onPressed: _sendImageToDrawCircle,
+            onPressed: _saveImage,
             tooltip: 'Next Step',
           ),
         ],
