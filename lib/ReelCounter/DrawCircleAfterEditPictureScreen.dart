@@ -35,7 +35,7 @@ class _DrawCircleScreenState extends State<DrawCircleAfterEditPictureScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       setInitialBoxCoordinates();
     });
   }

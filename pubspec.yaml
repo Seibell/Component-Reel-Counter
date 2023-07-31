@@ -48,12 +48,15 @@ dependencies:
   camera: ^0.10.5+2
   gallery_saver: ^2.3.2
   matrix_gesture_detector: ^0.2.0-nullsafety.1
-  flutter_image_compress: ^2.0.4
   fuzzywuzzy: 0.1.6
   url_launcher: ^6.1.11
   excel: ^2.1.0
   permission_handler: ^10.4.3
   share: ^2.0.4
+  flutter_image_compress: ^2.0.4
+
+dependency_overrides:
+  flutter_image_compress_common: ^1.0.2
 
 dev_dependencies:
   flutter_test:
