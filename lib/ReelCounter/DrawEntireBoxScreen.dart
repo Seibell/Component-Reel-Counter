@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:component_reel_counter/ReelCounter/EditPictureScreen.dart';
+import 'package:component_reel_counter/ReelCounter/DrawSmallerBoxScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -105,7 +105,7 @@ class _DrawEntireBoxScreenState extends State<DrawEntireBoxScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditPictureScreen(
+        builder: (context) => DrawSmallerBoxScreen(
           imageFile: XFile(widget.imageFile.path),
           imageWidth: averageBoxLength,
           imageHeight: averageBoxLength,

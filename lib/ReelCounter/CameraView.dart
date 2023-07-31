@@ -22,7 +22,7 @@ class _CameraViewState extends State<CameraView> {
 
   Future<void> initializeCamera() async {
     cameras = await availableCameras();
-    controller = CameraController(cameras![0], ResolutionPreset.ultraHigh);
+    controller = CameraController(cameras![0], ResolutionPreset.veryHigh);
     await controller!.initialize();
   }
 
@@ -63,9 +63,23 @@ class _CameraViewState extends State<CameraView> {
       future: _initializeCameraFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          // Always display the preview.
+          // If the Future is complete, display the preview.
           return Scaffold(
-            body: CameraPreview(controller!),
+            body: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: controller!.value.previewSize!.height,
+                      height: controller!.value.previewSize!.width,
+                      child: CameraPreview(controller!),
+                    ),
+                  ),
+                ),
+                // Other widgets can be placed over the camera preview here
+              ],
+            ),
             floatingActionButton: FloatingActionButton(
               onPressed: _takePictureAndEdit,
               child: Icon(Icons.camera_alt),
@@ -73,7 +87,7 @@ class _CameraViewState extends State<CameraView> {
           );
         } else {
           // Otherwise, display a loading indicator.
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
       },
     );

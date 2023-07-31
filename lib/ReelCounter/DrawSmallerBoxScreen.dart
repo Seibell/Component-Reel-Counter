@@ -7,21 +7,21 @@ import 'dart:math';
 import 'package:gallery_saver/gallery_saver.dart';
 import './ReelTypeForm.dart';
 
-class EditPictureScreen extends StatefulWidget {
+class DrawSmallerBoxScreen extends StatefulWidget {
   final XFile imageFile;
   final double imageHeight;
   final double imageWidth;
 
-  EditPictureScreen(
+  DrawSmallerBoxScreen(
       {required this.imageFile,
       required this.imageHeight,
       required this.imageWidth});
 
   @override
-  _EditPictureScreenState createState() => _EditPictureScreenState();
+  _DrawSmallerBoxScreenState createState() => _DrawSmallerBoxScreenState();
 }
 
-class _EditPictureScreenState extends State<EditPictureScreen> {
+class _DrawSmallerBoxScreenState extends State<DrawSmallerBoxScreen> {
   GlobalKey globalKey = GlobalKey();
   Offset boxCenter = const Offset(0, 0);
   Offset previousTouchPoint = const Offset(0, 0);
@@ -100,7 +100,7 @@ class _EditPictureScreenState extends State<EditPictureScreen> {
     final double length3 = (bottomRight - bottomLeft).distance;
     final double length4 = (bottomLeft - topLeft).distance;
 
-    print("******** Average Box length in EditPictureScreen is $length1");
+    print("******** Average Box length in DrawSmallerBoxScreen is $length1");
 
     return (length1 + length2 + length3 + length4) / 4;
   }
