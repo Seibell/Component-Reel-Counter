@@ -30,7 +30,7 @@ class _CameraViewState extends State<CameraView> {
     if (!controller!.value.isInitialized) {
       return;
     }
-    final XFile? photo = await controller!.takePicture();
+    final XFile photo = await controller!.takePicture();
 
     if (photo == null) return;
 
@@ -77,16 +77,14 @@ class _CameraViewState extends State<CameraView> {
                     ),
                   ),
                 ),
-                // Other widgets can be placed over the camera preview here
               ],
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: _takePictureAndEdit,
-              child: Icon(Icons.camera_alt),
+              child: const Icon(Icons.camera_alt),
             ),
           );
         } else {
-          // Otherwise, display a loading indicator.
           return const Center(child: CircularProgressIndicator());
         }
       },
